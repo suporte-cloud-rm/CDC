@@ -2,7 +2,18 @@ import fs from "node:fs";
 import https from "node:https";
 import path from "node:path";
 
-const NOTION_TOKEN = "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";
+// Carrega variaveis do arquivo .env se ele existir localmente
+if (fs.existsSync(".env")) {
+  const envConfig = fs.readFileSync(".env", "utf8");
+  envConfig.split("\n").forEach(line => {
+    const [key, value] = line.split("=");
+    if (key && value) {
+      process.env[key.trim()] = value.trim();
+    }
+  });
+}
+
+const NOTION_TOKEN = process.env.NOTION_TOKEN || "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";
 const PAGE_ID = "70cbd5429ec38371a96d81e62c92929d";
 
 // Cria pasta assets local para armazenar as imagens permanentemente
