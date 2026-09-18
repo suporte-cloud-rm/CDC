@@ -42,7 +42,6 @@
     }
     .btn-action:hover { background: #223250; border-color: rgba(90, 167, 255, 0.4); }
 
-    /* Balão de notificação */
     .badge-notificacao {
       background-color: var(--danger);
       color: #ffffff;
@@ -283,7 +282,6 @@
       padding-bottom: 12px;
     }
 
-    /* SISTEMA DE GRID PARA MINIATURAS */
     .painel-list {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -313,7 +311,6 @@
       box-shadow: 0 0 15px rgba(90, 167, 255, 0.25);
     }
 
-    /* ESTADO EXPANDIDO DA MINIATURA */
     .fb-item-card.expanded {
       grid-column: 1 / -1;
       cursor: default;
@@ -325,25 +322,24 @@
       justify-content: space-between;
       align-items: flex-start;
       border-bottom: 1px solid rgba(90, 167, 255, 0.2);
-      padding-bottom: 8px;
+      padding-bottom: 10px;
+      gap: 10px;
     }
 
     .fb-header-left {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      min-width: 0; 
       gap: 6px;
-    }
-
-    .fb-tag-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
     }
 
     .fb-header-right {
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+      flex-shrink: 0; 
+      text-align: right;
       gap: 4px;
     }
 
@@ -362,20 +358,25 @@
       font-size: 15px;
       font-weight: 700;
       color: var(--text);
+      word-break: break-word;
     }
 
-    .fb-author-inline {
-      color: var(--muted);
+    .fb-author {
+      color: #e8eefc;
       font-size: 12px;
       font-weight: 600;
+      max-width: 140px; 
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .fb-date {
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
+      white-space: nowrap;
     }
 
-    /* Oculta conteudo completo e botoes ate o card ser expandido */
     .fb-content { display: none; }
     .fb-item-actions { display: none; }
 
@@ -396,7 +397,6 @@
       margin-top: 8px;
     }
 
-    /* Previa de texto para a miniatura */
     .fb-content-thumb {
       font-size: 13px;
       color: var(--muted);
@@ -436,8 +436,6 @@
         </button>
       </div>
     </div>
-    
-    <!-- Formulário cego bloqueando a acao padrao de reload -->
     <form class="searchRow" onsubmit="event.preventDefault(); return false;">
       <div class="search-input-wrapper">
         <input id="q" type="text" class="search-box" placeholder="Buscar por erro, banco de dados, parâmetro... ou cole (Ctrl+V) um print" autocomplete="off" />
@@ -493,7 +491,7 @@
   </div>
 </div>
 
-<!-- Modal do Painel de Gerenciamento de Sugestões (Largura aumentada para comportar a Grid) -->
+<!-- Modal do Painel de Gerenciamento de Sugestões -->
 <div class="modal-backdrop" id="modalPainel">
   <div class="modal-box" style="max-width: 1200px; width: 95%;">
     <div class="modal-header">
@@ -522,7 +520,6 @@
 <script src="./docs.js"></script>
 
 <script>
-  // Ofuscação de segurança para ocultar a palavra no código do GitHub
   const HASH_SESSAO = "cmVkb25kbw==";
 
   function autenticar() {
@@ -658,7 +655,6 @@
         }
       }
 
-      // CORRECAO DA BUSCA: Cacador de Frases Longas no Corpo do Texto
       let longestSeq = 0;
       for(let len = Math.min(queryWords.length, 15); len >= 3; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
@@ -667,10 +663,9 @@
                   if (len > longestSeq) longestSeq = len;
               }
           }
-          if (longestSeq > 0) break; // achou a maior combinacao sequencial
+          if (longestSeq > 0) break;
       }
       
-      // Se achou uma sequencia do erro contida no texto, ele trava no Top 1 absoluto
       if (longestSeq >= 4) {
           score += Math.pow(longestSeq, 5) * 50000000; 
       } else if (longestSeq === 3) {
@@ -949,7 +944,6 @@
       }
     });
 
-    // Remocao fluida do Highlight sem perder a tela de vista
     btnClearSearch.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -1070,7 +1064,6 @@
     document.getElementById('modalPainel').style.display = 'none';
   }
 
-  // Interacao de abrir a miniatura do card
   function toggleCardExpand(event, id) {
     if (event.target.tagName.toLowerCase() === 'button' || event.target.tagName.toLowerCase() === 'img') {
        return;
@@ -1093,18 +1086,15 @@
       return;
     }
 
-    // Cabecalho com Tag e Autor alinhados na primeira linha a esquerda.
     container.innerHTML = feedbacks.map(item => `
       <div class="fb-item-card" id="item-${item.id}" onclick="toggleCardExpand(event, ${item.id})">
         <div class="fb-item-header">
           <div class="fb-header-left">
-            <div class="fb-tag-row">
-              <span class="fb-tag">${item.tipo}</span>
-              <span class="fb-author-inline">👤 Enviado por: ${item.autor}</span>
-            </div>
+            <div style="margin-bottom: 6px;"><span class="fb-tag">${item.tipo}</span></div>
             <div class="fb-doc-title">${item.doc}</div>
           </div>
           <div class="fb-header-right">
+            <div class="fb-author" title="Enviado por: ${item.autor}">👤 Enviado por: ${item.autor}</div>
             <div class="fb-date">${item.data}</div>
           </div>
         </div>
