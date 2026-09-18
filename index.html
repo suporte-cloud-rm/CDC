@@ -42,6 +42,23 @@
     }
     .btn-action:hover { background: #223250; border-color: rgba(90, 167, 255, 0.4); }
 
+    /* Balão de notificação */
+    .badge-notificacao {
+      background-color: var(--danger);
+      color: #ffffff;
+      font-size: 12px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 12px;
+      margin-left: 4px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      line-height: 1;
+    }
+
     .searchRow { display: flex; gap: 10px; margin-top: 12px; align-items: center; position: relative; }
     
     .search-input-wrapper {
@@ -115,7 +132,7 @@
       margin-top: 8px; 
       white-space: pre-wrap;
       word-break: break-word;
-      max-height: 600px;
+      max-height: 500px;
       overflow-y: auto;
       background: rgba(4, 8, 16, 0.55); 
       padding: 12px 16px;
@@ -266,13 +283,15 @@
       padding-bottom: 12px;
     }
 
+    /* SISTEMA DE GRID PARA MINIATURAS */
     .painel-list {
-      display: flex;
-      flex-direction: column;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 16px;
-      max-height: 60vh;
+      max-height: 65vh;
       overflow-y: auto;
       padding-right: 6px;
+      align-items: start;
     }
 
     .fb-item-card {
@@ -283,7 +302,22 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-      box-shadow: 0 0 10px rgba(90, 167, 255, 0.15);
+      box-shadow: 0 0 10px rgba(90, 167, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+
+    .fb-item-card:hover {
+      border-color: #ffffff;
+      box-shadow: 0 0 15px rgba(90, 167, 255, 0.25);
+    }
+
+    /* ESTADO EXPANDIDO DA MINIATURA */
+    .fb-item-card.expanded {
+      grid-column: 1 / -1;
+      cursor: default;
+      border-color: var(--accent);
     }
 
     .fb-item-header {
@@ -298,6 +332,12 @@
       display: flex;
       flex-direction: column;
       gap: 6px;
+    }
+
+    .fb-tag-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .fb-header-right {
@@ -324,8 +364,8 @@
       color: var(--text);
     }
 
-    .fb-author {
-      color: #e8eefc;
+    .fb-author-inline {
+      color: var(--muted);
       font-size: 12px;
       font-weight: 600;
     }
@@ -335,20 +375,53 @@
       font-size: 12px;
     }
 
-    .fb-content {
+    /* Oculta conteudo completo e botoes ate o card ser expandido */
+    .fb-content { display: none; }
+    .fb-item-actions { display: none; }
+
+    .fb-item-card.expanded .fb-content {
+      display: block;
       font-size: 14px;
       line-height: 1.5;
       color: var(--text);
       white-space: pre-wrap;
       word-break: break-word;
+      margin-top: 10px;
     }
 
-    .fb-item-actions {
+    .fb-item-card.expanded .fb-item-actions {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
       margin-top: 8px;
     }
+
+    /* Previa de texto para a miniatura */
+    .fb-content-thumb {
+      font-size: 13px;
+      color: var(--muted);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-top: 4px;
+    }
+
+    .fb-item-card.expanded .fb-content-thumb {
+      display: none;
+    }
+
+    .hint-expand {
+      font-size: 11px;
+      color: var(--accent);
+      text-align: center;
+      margin-top: 8px;
+      opacity: 0.7;
+    }
+    .fb-item-card:hover .hint-expand { opacity: 1; }
+    .fb-item-card.expanded .hint-expand { display: none; }
+
   </style>
 </head>
 <body>
@@ -357,9 +430,13 @@
     <div class="top">
       <div class="brand">Central de Conhecimento - Suporte Cloud (RM)</div>
       <div class="actions-top">
-        <button class="btn-action" onclick="abrirPainelSugestoes()">📥 Painel de Sugestões</button>
+        <button class="btn-action" onclick="abrirPainelSugestoes()">
+          📥 Painel de Sugestões
+          <span id="badgeSugestoes" class="badge-notificacao" style="display: none;">0</span>
+        </button>
       </div>
     </div>
+    
     <!-- Formulário cego bloqueando a acao padrao de reload -->
     <form class="searchRow" onsubmit="event.preventDefault(); return false;">
       <div class="search-input-wrapper">
@@ -416,9 +493,9 @@
   </div>
 </div>
 
-<!-- Modal do Painel de Gerenciamento de Sugestões -->
+<!-- Modal do Painel de Gerenciamento de Sugestões (Largura aumentada para comportar a Grid) -->
 <div class="modal-backdrop" id="modalPainel">
-  <div class="modal-box" style="max-width: 850px; width: 95%;">
+  <div class="modal-box" style="max-width: 1200px; width: 95%;">
     <div class="modal-header">
       <h3>📥 Painel de Sugestões e Correções</h3>
       <button class="modal-close" onclick="fecharPainelSugestoes()">&times;</button>
@@ -467,6 +544,19 @@
 
   function escapeRegExp(string) {
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function atualizarBadgeSugestoes() {
+    const feedbacks = JSON.parse(localStorage.getItem('cdc_feedbacks') || '[]');
+    const badge = document.getElementById('badgeSugestoes');
+    if (badge) {
+      if (feedbacks.length > 0) {
+        badge.textContent = feedbacks.length;
+        badge.style.display = 'inline-flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
   }
 
   if (autenticar()) {
@@ -549,7 +639,9 @@
 
       let titleMatchedWords = 0;
       for (const word of queryWords) {
-        if (titleClean.includes(word)) titleMatchedWords++;
+        if (titleClean.includes(word)) {
+          titleMatchedWords++;
+        }
       }
 
       const ratioTitle = titleMatchedWords / queryWords.length;
@@ -566,7 +658,7 @@
         }
       }
 
-      // CORRECAO DA BUSCA: Focar na sequencia exata encontrada no CORPO DO TEXTO
+      // CORRECAO DA BUSCA: Cacador de Frases Longas no Corpo do Texto
       let longestSeq = 0;
       for(let len = Math.min(queryWords.length, 15); len >= 3; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
@@ -575,14 +667,14 @@
                   if (len > longestSeq) longestSeq = len;
               }
           }
-          if (longestSeq > 0) break; // achou a maior combinacao do erro
+          if (longestSeq > 0) break; // achou a maior combinacao sequencial
       }
       
-      // Se achou uma grande sequencia exata do erro no texto, garantir a posicao 1
+      // Se achou uma sequencia do erro contida no texto, ele trava no Top 1 absoluto
       if (longestSeq >= 4) {
-          score += Math.pow(longestSeq, 5) * 5000000; 
+          score += Math.pow(longestSeq, 5) * 50000000; 
       } else if (longestSeq === 3) {
-          score += 500000;
+          score += 5000000;
       }
 
       if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
@@ -682,7 +774,7 @@
 
       if (queryWords.length >= 2) {
         let bestCount = 0;
-        const windowSize = 350; // Janela um pouco maior para englobar o bloco do erro inteiro
+        const windowSize = 350;
         const maxI = Math.max(0, text.length - windowSize);
         
         for (let i = 0; i <= maxI; i += 40) {
@@ -692,7 +784,7 @@
           if (isUrl) continue;
 
           let count = 0;
-          const cSlice = cleanText(slice); // Remocao de acentos do bloco garantida
+          const cSlice = cleanText(slice); 
           for (const w of queryWords) {
             if (cSlice.includes(w)) count++;
             else {
@@ -850,7 +942,14 @@
       });
     }
 
-    // Comportamento EXCLUSIVO para remover os highlights azuis sem atualizar a pagina 
+    q.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        render();
+      }
+    });
+
+    // Remocao fluida do Highlight sem perder a tela de vista
     btnClearSearch.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -858,7 +957,6 @@
       q.value = '';
       btnClearSearch.style.display = 'none';
       
-      // Procura todas as marcações na tela e remove o highlight mantendo o texto exato
       const marks = document.getElementById('grid').querySelectorAll('mark');
       marks.forEach(mark => {
         const parent = mark.parentNode;
@@ -866,12 +964,12 @@
         parent.replaceChild(textNode, mark);
         parent.normalize(); 
       });
-      // Importante: Nao executamos o render() nem o q.focus() para que a pagina nao se mexa e o texto permaneca.
     });
 
     q.addEventListener('input', render);
     count.textContent = `${DOCS.length} documentações carregadas.`;
     render();
+    atualizarBadgeSugestoes();
   }
 
   function ampliarImagem(url) {
@@ -958,6 +1056,7 @@
     localStorage.setItem('cdc_feedbacks', JSON.stringify(feedbacks));
 
     alert("Sugestão enviada com sucesso para o Painel!");
+    atualizarBadgeSugestoes(); 
     fecharModalFeedback();
     abrirPainelSugestoes();
   }
@@ -971,6 +1070,20 @@
     document.getElementById('modalPainel').style.display = 'none';
   }
 
+  // Interacao de abrir a miniatura do card
+  function toggleCardExpand(event, id) {
+    if (event.target.tagName.toLowerCase() === 'button' || event.target.tagName.toLowerCase() === 'img') {
+       return;
+    }
+    const card = document.getElementById(`item-${id}`);
+    if (card) {
+      document.querySelectorAll('.fb-item-card.expanded').forEach(c => {
+         if (c.id !== `item-${id}`) c.classList.remove('expanded');
+      });
+      card.classList.toggle('expanded');
+    }
+  }
+
   function renderizarPainel() {
     const container = document.getElementById('painelList');
     const feedbacks = JSON.parse(localStorage.getItem('cdc_feedbacks') || '[]');
@@ -980,25 +1093,29 @@
       return;
     }
 
-    // Cabecalho atualizado:
-    // Dir Cima: Enviado por | Esq Cima: Tipo do chamado
-    // Dir Baixo: Data | Esq Baixo: Titulo da documentação
+    // Cabecalho com Tag e Autor alinhados na primeira linha a esquerda.
     container.innerHTML = feedbacks.map(item => `
-      <div class="fb-item-card" id="item-${item.id}">
+      <div class="fb-item-card" id="item-${item.id}" onclick="toggleCardExpand(event, ${item.id})">
         <div class="fb-item-header">
           <div class="fb-header-left">
-            <div><span class="fb-tag">${item.tipo}</span></div>
+            <div class="fb-tag-row">
+              <span class="fb-tag">${item.tipo}</span>
+              <span class="fb-author-inline">👤 Enviado por: ${item.autor}</span>
+            </div>
             <div class="fb-doc-title">${item.doc}</div>
           </div>
           <div class="fb-header-right">
-            <div class="fb-author">👤 Enviado por: ${item.autor}</div>
             <div class="fb-date">${item.data}</div>
           </div>
         </div>
+        
+        <div class="fb-content-thumb">${item.texto.replace(/<[^>]+>/g, '')}</div>
+        <div class="hint-expand">⬇️ Clique para expandir</div>
+
         <div class="fb-content" id="content-${item.id}">${item.html}</div>
         <div class="fb-item-actions">
-          <button class="btn-action" onclick="copiarTextoFormatadoItem(${item.id})">📝 Copiar Texto Formatado</button>
-          <button class="btn-danger" onclick="excluirFeedback(${item.id})">🗑️ Excluir</button>
+          <button class="btn-action" onclick="event.stopPropagation(); copiarTextoFormatadoItem(${item.id})">📝 Copiar Estrutura Markdown</button>
+          <button class="btn-danger" onclick="event.stopPropagation(); excluirFeedback(${item.id})">🗑️ Excluir</button>
         </div>
       </div>
     `).join('');
@@ -1046,6 +1163,7 @@
     feedbacks = feedbacks.filter(f => f.id !== id);
     localStorage.setItem('cdc_feedbacks', JSON.stringify(feedbacks));
     renderizarPainel();
+    atualizarBadgeSugestoes(); 
   }
 </script>
 </body>
