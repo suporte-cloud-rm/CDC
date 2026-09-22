@@ -22,46 +22,65 @@ if (!fs.existsSync(ASSETS_DIR)) {
   fs.mkdirSync(ASSETS_DIR, { recursive: true });
 }
 
-function notionRequest(endpoint) {
-  return new Promise((resolve, reject) => {
-    const options = {
-      hostname: 'api.notion.com',
-      port: 443,
-      path: `/v1${endpoint}`,
-      method: 'GET',
-      rejectUnauthorized: false,
-      headers: {
-        'Authorization': `Bearer ${NOTION_TOKEN}`,
-        'Notion-Version': '2022-06-28',
-        'User-Agent': 'NodeJS-Script'
-      }
-    };
+// Função de pausa para evitar Rate Limit
+const delay = (ms) => new Promise(res => setTimeout(res, ms));
 
-    const req = https.request(options, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(data);
-          if (res.statusCode >= 400) reject(new Error(parsed.message || `HTTP ${res.statusCode}`));
-          else resolve(parsed);
-        } catch (e) {
-          reject(e);
-        }
+async function notionRequest(endpoint, retries = 5) {
+  for (let i = 0; i <= retries; i++) {
+    try {
+      return await new Promise((resolve, reject) => {
+        const options = {
+          hostname: 'api.notion.com',
+          port: 443,
+          path: `/v1${endpoint}`,
+          method: 'GET',
+          rejectUnauthorized: false,
+          headers: {
+            'Authorization': `Bearer ${NOTION_TOKEN}`,
+            'Notion-Version': '2022-06-28',
+            'User-Agent': 'NodeJS-Script'
+          }
+        };
+
+        const req = https.request(options, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            try {
+              const parsed = data ? JSON.parse(data) : {};
+              // Se o Notion bloquear por excesso de requisições
+              if (res.statusCode === 429) {
+                reject({ status: 429, message: "Rate limit excedido" });
+              } else if (res.statusCode >= 400) {
+                reject(new Error(parsed.message || `HTTP ${res.statusCode}`));
+              } else {
+                resolve(parsed);
+              }
+            } catch (e) {
+              reject(e);
+            }
+          });
+        });
+
+        req.on('error', (e) => reject(e));
+        req.end();
       });
-    });
-
-    req.on('error', (e) => reject(e));
-    req.end();
-  });
+    } catch (e) {
+      // Tenta novamente se for bloqueio de limite do Notion
+      if (e.status === 429 && i < retries) {
+        console.log(`[Rate Limit Notion] Aguardando para tentar novamente (${i + 1}/${retries})...`);
+        await delay(1500 * (i + 1)); // Aumenta o tempo de espera a cada tentativa falha
+        continue;
+      }
+      throw e; 
+    }
+  }
 }
 
-// Função para baixar imagens do Notion e salvar localmente
 function downloadImage(url, filename) {
   return new Promise((resolve) => {
     const filePath = path.join(ASSETS_DIR, filename);
     
-    // Se a imagem já foi baixada anteriormente, reutiliza
     if (fs.existsSync(filePath)) {
       return resolve(`./assets/${filename}`);
     }
@@ -74,7 +93,7 @@ function downloadImage(url, filename) {
           file.close(() => resolve(`./assets/${filename}`));
         });
       } else {
-        fs.unlink(filePath, () => resolve(url)); // Se falhar, usa a URL original
+        fs.unlink(filePath, () => resolve(url)); 
       }
     }).on('error', () => {
       fs.unlink(filePath, () => resolve(url));
@@ -117,7 +136,6 @@ async function getBlockContent(blockId) {
           continue;
         }
 
-        // Leitura e Download de Imagens
         if (block.type === "image" && block.image) {
           const imgUrl = block.image.type === "file" ? block.image.file.url : block.image.external.url;
           if (imgUrl) {
@@ -129,8 +147,16 @@ async function getBlockContent(blockId) {
         }
 
         const btype = block.type;
+        
+        // Garante que os textos dentro de Tabelas sejam lidos pelo OCR
+        if (btype === "table_row" && block.table_row && block.table_row.cells) {
+          for (const cell of block.table_row.cells) {
+            text += " " + cell.map(t => t.plain_text).join("");
+            subPageIds.push(...extractIdsFromRichText(cell));
+          }
+        }
+
         if (block[btype]) {
-          // Processa textos com links formatados em Markdown [Texto](URL)
           if (block[btype].rich_text && Array.isArray(block[btype].rich_text)) {
             const blockContent = block[btype].rich_text.map(t => {
               if (t.href) {
@@ -149,7 +175,6 @@ async function getBlockContent(blockId) {
           }
         }
 
-        // Leitura de Toggles e blocos filhos
         if (block.has_children) {
           const inner = await getBlockContent(block.id);
           text += "\n" + inner.text;
@@ -159,8 +184,13 @@ async function getBlockContent(blockId) {
 
       hasMore = data.has_more;
       startCursor = data.next_cursor;
+      
+      // Pequena pausa para evitar esgotar a API ao virar a página
+      if (hasMore) await delay(200);
     }
-  } catch (e) {}
+  } catch (e) {
+    console.error(`[Aviso] Falha ao processar filhos do bloco ${blockId}:`, e.message);
+  }
 
   return { text, subPageIds };
 }
@@ -202,13 +232,15 @@ async function scanPageRecursively(pageId, parentPath = []) {
       const childDocs = await scanPageRecursively(childId, currentPath);
       docs.push(...childDocs);
     }
-  } catch (err) {}
+  } catch (err) {
+    console.error(`[ERRO CRÍTICO] Falha ao escanear página ${pageId} (${parentPath.join(" > ")}):`, err.message);
+  }
 
   return docs;
 }
 
 async function main() {
-  console.log("Iniciando varredura e download de imagens...");
+  console.log("Iniciando varredura e download de imagens (Pode demorar alguns minutos)...");
   const docs = await scanPageRecursively(PAGE_ID);
 
   const payload = {
@@ -221,7 +253,7 @@ async function main() {
   fs.writeFileSync("./docs.json", jsonContent, "utf8");
   fs.writeFileSync("./docs.js", `const DATA = ${jsonContent};`, "utf8");
 
-  console.log(`\nSucesso! ${docs.length} páginas e imagens salvas localmente em ./assets`);
+  console.log(`\nSucesso! ${docs.length} documentações capturadas e salvas no docs.js.`);
 }
 
 main();

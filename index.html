@@ -21,7 +21,8 @@
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
     header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: rgba(11,15,25,.85); border-bottom: 1px solid var(--border); }
     
-    .wrap { max-width: 1500px; margin: 0 auto; padding: 16px; }
+    /* Espaço maximizado para aproveitamento lateral (2 Colunas) */
+    .wrap { max-width: 1700px; width: 96%; margin: 0 auto; padding: 16px; }
     
     .top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .brand { font-weight: 700; font-size: 18px; }
@@ -43,7 +44,6 @@
       transition: all 0.2s ease;
     }
     .btn-action:hover { background: #223250; border-color: rgba(90, 167, 255, 0.4); }
-    .btn-action:disabled { opacity: 0.6; cursor: not-allowed; }
 
     .searchRow { display: flex; gap: 10px; margin-top: 12px; align-items: center; position: relative; }
     
@@ -86,27 +86,27 @@
     main { padding: 18px 0 40px; }
     
     /* Grid de Pesquisa (2 colunas) */
-    .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
     @media (min-width: 992px) {
       .grid { grid-template-columns: 1fr 1fr; }
     }
 
-    /* Grid do Dashboard Inicial (Múltiplas colunas com miniaturas) */
+    /* Grid do Dashboard Inicial (Miniaturas limpas) */
     .grid-thumbnails {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
       gap: 16px;
     }
     
-    /* Card da Pesquisa (com balão) */
+    /* Card da Pesquisa (Balão) */
     .card { 
       background: var(--card); 
       border: 1px solid var(--border); 
       border-radius: 14px; 
-      padding: 20px 24px; 
+      padding: 24px; 
       display: flex; 
       flex-direction: column; 
-      gap: 4px; 
+      gap: 6px; 
       transition: border-color 0.2s ease;
       height: 100%;
     }
@@ -158,21 +158,21 @@
       word-break: break-word;
     }
     
-    .card h3 { margin: 2px 0 0; font-size: 18px; }
+    .card h3 { margin: 2px 0 0; font-size: 20px; }
     .card h3 a { color: var(--accent); text-decoration: none; }
     .card h3 a:hover { opacity: 0.85; }
     
     .snippet { 
       color: #c0cdf0; 
-      font-size: 14px; 
+      font-size: 14.5px; 
       line-height: 1.5; 
-      margin-top: 8px; 
+      margin-top: 10px; 
       white-space: pre-wrap;
       word-break: break-word;
       max-height: 600px;
       overflow-y: auto;
       background: rgba(4, 8, 16, 0.55); 
-      padding: 12px 16px;
+      padding: 16px 20px;
       border-radius: 10px;
       border: 1px solid rgba(90, 167, 255, 0.25);
       box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
@@ -181,40 +181,231 @@
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
-    .snippet .img-container { display: block; margin: 6px 0; position: relative; }
-    .snippet img { max-width: 100%; height: auto; max-height: 280px; object-fit: contain; object-position: left; display: block; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; margin: 4px 0; transition: transform 0.2s ease, border-color 0.2s ease; }
-    .snippet img:hover { transform: scale(1.02); border-color: var(--accent); }
+    .snippet .img-container {
+      display: block;
+      margin: 8px 0;
+      position: relative;
+    }
 
-    .img-fallback-msg { display: none; font-size: 12px; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px dashed rgba(255, 193, 7, 0.4); padding: 6px 10px; border-radius: 6px; }
+    .snippet img {
+      max-width: 100%;
+      height: auto;
+      max-height: 350px;
+      object-fit: contain;
+      object-position: left;
+      display: block;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      cursor: pointer;
+      margin: 4px 0;
+      transition: transform 0.2s ease, border-color 0.2s ease;
+    }
+
+    .snippet img:hover {
+      transform: scale(1.02);
+      border-color: var(--accent);
+    }
+
+    .img-fallback-msg {
+      display: none;
+      font-size: 12px;
+      color: #ffc107;
+      background: rgba(255, 193, 7, 0.1);
+      border: 1px dashed rgba(255, 193, 7, 0.4);
+      padding: 6px 10px;
+      border-radius: 6px;
+    }
+
     .img-container.img-failed img { display: none; }
     .img-container.img-failed .img-fallback-msg { display: block; }
 
-    .img-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 300; cursor: pointer; }
-    .img-modal-content { max-width: 90vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid var(--border); }
+    .img-modal-backdrop {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center;
+      z-index: 300; cursor: pointer;
+    }
+
+    .img-modal-content {
+      max-width: 90vw; max-height: 90vh;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      border: 1px solid var(--border);
+    }
 
     .snippet::-webkit-scrollbar { width: 6px; }
     .snippet::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
     .snippet::-webkit-scrollbar-thumb { background: rgba(90, 167, 255, 0.3); border-radius: 4px; }
 
-    mark { background: rgba(90, 167, 255, 0.25); color: #5aa7ff; font-weight: 700; padding: 1px 3px; border-radius: 3px; border: 1px solid rgba(90, 167, 255, 0.4); box-shadow: none; display: inline-block; line-height: 1.1; }
+    mark { 
+      background: rgba(90, 167, 255, 0.25); 
+      color: #5aa7ff; 
+      font-weight: 700; 
+      padding: 1px 3px; 
+      border-radius: 3px; 
+      border: 1px solid rgba(90, 167, 255, 0.4);
+      box-shadow: none;
+      display: inline-block;
+      line-height: 1.1;
+    }
 
     .count { color: var(--muted); font-size: 13px; margin-top: 10px; }
     .ocr-status { color: var(--breadcrumb-green); font-size: 13px; margin-top: 6px; font-weight: 500; display: none; }
 
-    .modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 200; }
-    .modal-box { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; width: 100%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px; max-height: 90vh; overflow-y: auto;}
+    .modal-backdrop {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center;
+    }
+
+    #modalPainel { z-index: 100; }
+    #modalFeedback { z-index: 150; }
+
+    .modal-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 16px; padding: 24px; width: 100%; max-width: 800px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column; gap: 14px;
+    }
     .modal-header { display: flex; justify-content: space-between; align-items: center; }
     .modal-header h3 { margin: 0; font-size: 18px; color: var(--text); }
     .modal-close { background: transparent; border: none; color: var(--muted); font-size: 20px; cursor: pointer; }
-    
     .modal-body label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 4px; font-weight: 600; }
-    .modal-body select, .modal-body input[type="text"], .modal-body textarea { width: 100%; background: #0b0f19; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 10px; font-size: 14px; outline: none; margin-bottom: 12px; font-family: inherit; }
-    .modal-body textarea { min-height: 120px; resize: vertical; line-height: 1.5; }
-
+    .modal-body select, .modal-body input[type="text"] {
+      width: 100%; background: #0b0f19; color: var(--text); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px; font-size: 14px; outline: none; margin-bottom: 12px;
+    }
     .modal-footer { display: flex; justify-content: flex-end; gap: 10px; }
     .btn-submit { background: var(--accent); color: #000; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 700; cursor: pointer; }
-    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; }
     .btn-cancel { background: transparent; color: var(--muted); border: 1px solid var(--border); padding: 10px 18px; border-radius: 8px; cursor: pointer; }
+    .btn-danger { background: transparent; color: var(--danger); border: 1px solid rgba(255, 82, 82, 0.3); padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-danger:hover { background: rgba(255, 82, 82, 0.15); }
+	
+    #fbEditor {
+      width: 100%;
+      min-height: 220px;
+      max-height: 400px;
+      overflow-y: auto;
+      background: #0b0f19;
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      outline: none;
+      margin-bottom: 8px;
+    }
+
+    #fbEditor:empty:before {
+      content: attr(placeholder);
+      color: var(--muted);
+      display: block;
+    }
+
+    #fbEditor img, .fb-content img {
+      display: block;
+      max-width: 100%;
+      max-height: 350px;
+      object-fit: contain;
+      border-radius: 6px;
+      margin: 10px 0;
+      border: 1px solid var(--border);
+      cursor: pointer;
+      clear: both;
+    }
+
+    .painel-top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      border-bottom: 1px solid rgba(90, 167, 255, 0.1);
+      padding-bottom: 12px;
+    }
+
+    .painel-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .fb-item-card {
+      background: #0b0f19;
+      border: 1px solid var(--accent);
+      border-radius: 10px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      box-shadow: 0 0 10px rgba(90, 167, 255, 0.15);
+    }
+
+    .fb-item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      border-bottom: 1px solid rgba(90, 167, 255, 0.2);
+      padding-bottom: 8px;
+    }
+
+    .fb-header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .fb-header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 4px;
+    }
+
+    .fb-tag {
+      background: rgba(90, 167, 255, 0.15);
+      color: var(--accent);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+      border: 1px solid rgba(90, 167, 255, 0.3);
+      display: inline-block;
+    }
+
+    .fb-doc-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .fb-author {
+      color: #e8eefc;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .fb-date {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .fb-content {
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .fb-item-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -223,9 +414,7 @@
     <div class="top">
       <div class="brand">Central de Conhecimento - Suporte Cloud (RM)</div>
       <div class="actions-top">
-        <button class="btn-action" onclick="abrirModalFeedback()">
-          ➕ Enviar Documentação
-        </button>
+        <button class="btn-action" onclick="abrirPainelSugestoes()">📥 Painel de Sugestões</button>
       </div>
     </div>
     <form class="searchRow" onsubmit="event.preventDefault(); return false;">
@@ -248,39 +437,58 @@
 
 <main>
   <div class="wrap">
+    <!-- Grid dinâmico -->
     <div id="gridWrapper"></div>
   </div>
 </main>
 
-<!-- Modal de Envio -->
+<!-- Modal de Envio de Feedback -->
 <div class="modal-backdrop" id="modalFeedback">
   <div class="modal-box" style="max-width: 800px; width: 90%;">
     <div class="modal-header">
-      <h3>Enviar Documentação</h3>
+      <h3>Adicionar Sugestão ou Correção de Documentação</h3>
       <button class="modal-close" onclick="fecharModalFeedback()">&times;</button>
     </div>
     <div class="modal-body">
-      <label for="fbAutor">Seu Nome:</label>
-      <input type="text" id="fbAutor" placeholder="Ex: João Silva" />
+      <label for="fbAutor">Seu Nome / E-mail (Para contato)</label>
+      <input type="text" id="fbAutor" placeholder="Ex: João Silva (joao.silva@empresa.com)" />
 
-      <label for="fbTipo">Tipo:</label>
+      <label for="fbTipo">Tipo de Envio</label>
       <select id="fbTipo">
-        <option value="Nova Documentação">Nova Documentação</option>
-        <option value="Correção de Documentação Existente">Correção de Documentação Existente</option>
+        <option value="Sugestão de Melhoria">Sugestão de Melhoria</option>
+        <option value="Correção de Documentação">Correção de Documentação</option>
       </select>
 
-      <label for="fbDoc">Assunto</label>
-      <input type="text" id="fbDoc" placeholder="Ex: Portal MeuRH" />
-      
-      <label for="fbTicket">Ticket de referência</label>
-      <input type="text" id="fbTicket" placeholder="Ex: #12345678" />
+      <label for="fbDoc">Documentação Relacionada (Opcional)</label>
+      <input type="text" id="fbDoc" placeholder="Ex: LAUNCHER (RM.exe) ou URL no Notion" />
 
-      <label for="fbEditor">Deixe aqui o detalhamento e número de ticket para referência (caso se aplique)</label>
-      <textarea id="fbEditor" placeholder="Apenas texto..."></textarea>
+      <label for="fbEditor">Detalhamento (Cole textos e imagens com Ctrl+V)</label>
+      <div id="fbEditor" contenteditable="true" placeholder="Cole aqui o texto e prints do erro..."></div>
+      <div id="uploadStatus" style="font-size: 12px; color: var(--accent); margin-top: 4px; display: none;">Processando imagem...</div>
     </div>
     <div class="modal-footer">
       <button class="btn-cancel" onclick="fecharModalFeedback()">Cancelar</button>
-      <button class="btn-submit" id="btnEnviarFb" onclick="enviarFeedbackWebhook()">Enviar</button>
+      <button class="btn-submit" id="btnEnviarFb" onclick="salvarFeedbackLocal()">Enviar Feedback</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal do Painel de Gerenciamento de Sugestões -->
+<div class="modal-backdrop" id="modalPainel">
+  <div class="modal-box" style="max-width: 850px; width: 95%;">
+    <div class="modal-header">
+      <h3>📥 Painel de Sugestões e Correções</h3>
+      <button class="modal-close" onclick="fecharPainelSugestoes()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="painel-top-bar">
+        <span style="font-size: 13px; color: var(--muted);">Visualize ou adicione contribuições para a documentação:</span>
+        <button class="btn-action" onclick="abrirModalFeedback()">➕ Nova Sugestão / Correção</button>
+      </div>
+      <div class="painel-list" id="painelList"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="fecharPainelSugestoes()">Fechar</button>
     </div>
   </div>
 </div>
@@ -301,7 +509,6 @@
     if (acessoSalvo === HASH_SESSAO) return true;
 
     const senhaDigitada = prompt("Central de Conhecimento - Suporte Cloud (RM)\n\nPor favor, digite a senha de acesso:");
-    
     if (senhaDigitada && btoa(senhaDigitada.trim().toLowerCase()) === HASH_SESSAO) {
       sessionStorage.setItem("acesso_central_cloud", HASH_SESSAO);
       return true;
@@ -313,13 +520,12 @@
     }
   }
 
-  function escapeRegExp(string) { return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function escapeRegExp(string) {
+    return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
 
   if (autenticar()) {
     const DOCS = (typeof DATA !== 'undefined' && DATA.docs) ? DATA.docs : [];
-    // Ordena as documentações alfabeticamente para o Dashboard inicial
-    const SORTED_DOCS = [...DOCS].sort((a, b) => (a.path || a.title).localeCompare(b.path || b.title));
-    
     const gridWrapper = document.getElementById('gridWrapper');
     const q = document.getElementById('q');
     const btnClearSearch = document.getElementById('btnClearSearch');
@@ -327,192 +533,295 @@
     const fileInput = document.getElementById('fileInput');
     const ocrStatus = document.getElementById('ocrStatus');
 
-    const STOP_WORDS = new Set(["de", "da", "do", "das", "dos", "ao", "aos", "em", "na", "nos", "nas", "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "foi", "que", "ha", "este", "esta", "and", "or", "to", "in", "for", "with", "of", "vw", "atencao", "e"]);
+    // LISTA EXATA PARA O MENU INICIAL
+    const MENU_PRINCIPAL = [
+      "SUPORTE", "RM", "PORTAIS", "INTEGRAÇÕES", "BANCO DE DADOS",
+      "RÉPLICA", "ATUALIZAÇÃO", "CUSTOMIZAÇÃO", "EXECUÇÃO DE SCRIPTS", "DISPONIBILIZAÇÃO DE BACKUP",
+      "FTP", "GO GLOBAL", "TOTVS AUDIT", "LICENSE SERVER", "IMPORTAÇÃO DE ARQUIVO", "LIBERAÇÃO DE ACESSO EXTERNO",
+      "PVI", "SFA", "FLUIG", "T-CLOUD", "SMART VIEW", "FAST ANALYTICS", "FISCAL SYNC",
+      "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "DEVOPS"
+    ];
 
+    // STOP WORDS EXATAS DO BACKUP 3
+    const STOP_WORDS = new Set([
+      "de", "da", "do", "das", "dos", "ao", "aos", "em", "na", "nos", "nas", 
+      "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "foi", 
+      "que", "ha", "este", "esta", "and", "or", "to", "in", "for", "with", "of", "vw", "atencao"
+    ]);
+
+    // O CLEANTEXT EXATO DO BACKUP 3 (Essencial para não quebrar o OCR)
     function cleanText(s) {
       if (!s) return '';
-      return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\-]/g, ' ').replace(/\s+/g, ' ').trim();
+      return s
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
     }
 
-    function removeUrlsFromText(text) { return text ? text.replace(/https?:\/\/[^\s<)]+/gi, '') : ''; }
-    function getKeywords(text) { return cleanText(text).split(' ').filter(w => w.length >= 2 && !STOP_WORDS.has(w)); }
-    function getStem(word) { return (!word || word.length < 4) ? word : word.substring(0, Math.min(5, word.length)); }
+    function removeUrlsFromText(text) {
+      if (!text) return '';
+      return text.replace(/https?:\/\/[^\s<)]+/gi, '');
+    }
+
+    // O GETKEYWORDS EXATO DO BACKUP 3
+    function getKeywords(text) {
+      const clean = cleanText(text);
+      return clean
+        .split(' ')
+        .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+    }
+
+    function getStem(word) {
+      if (!word || word.length < 4) return word;
+      return word.substring(0, Math.min(5, word.length));
+    }
 
     const searchDocs = DOCS.map(d => {
       const textWithoutUrls = removeUrlsFromText(d.text);
       const titleKws = getKeywords(d.title);
       return {
         ...d,
+        cleanTitle: cleanText(d.title),
         cleanTitleNoStopwords: titleKws.join(' '),
         cleanText: cleanText(textWithoutUrls),
+        rawTextClean: cleanText(d.text),
+        cleanPath: cleanText(d.path || d.title),
+        titleKeywords: titleKws,
+        textKeywords: getKeywords(textWithoutUrls)
       };
     });
 
     const fuse = new Fuse(searchDocs, {
-      keys: [{ name: 'cleanTitleNoStopwords', weight: 0.99 }, { name: 'cleanText', weight: 0.01 }],
-      threshold: 0.4, ignoreLocation: true, minMatchCharLength: 2, useExtendedSearch: true
+      keys: [
+        { name: 'cleanTitleNoStopwords', weight: 0.99 },
+        { name: 'cleanText', weight: 0.01 }
+      ],
+      threshold: 0.4,
+      ignoreLocation: true,
+      minMatchCharLength: 2,
+      useExtendedSearch: true
     });
 
+    // MOTOR DE BUSCA DO BACKUP 3 + VIA VERDE DO HÍFEN
     function getScore(d, rawQuery) {
       if (!rawQuery) return 0;
+      
+      let score = 0;
+
+      // ---> VIA VERDE PARA "T-CLOUD" E "GO-GLOBAL" <---
+      // Procura a palavra EXATA que o utilizador digitou (com hífens) no documento cru (sem remover hífens)
+      const exactSearch = rawQuery.toLowerCase().trim();
+      const docTitleRaw = (d.title || "").toLowerCase();
+      const docTextRaw = (d.text || "").toLowerCase();
+      const exactNoHyphen = exactSearch.replace(/-/g, ' ');
+
+      if (exactSearch.length >= 3) {
+          if (docTitleRaw === exactSearch || docTitleRaw === exactNoHyphen) score += 2000000000;
+          else if (docTitleRaw.includes(exactSearch) || docTitleRaw.includes(exactNoHyphen)) score += 100000000;
+
+          if (docTextRaw.includes(exactSearch) || docTextRaw.includes(exactNoHyphen)) score += 50000000;
+      }
+      // ---> FIM DA VIA VERDE <---
+
+      // ---> INÍCIO DA MATEMÁTICA EXATA DO BACKUP 3 (QUE SALVA O EDUCAMOBILE) <---
       const cleanQ = cleanText(rawQuery);
       const queryWords = getKeywords(rawQuery);
-      if (queryWords.length === 0) return 0;
+      if (queryWords.length === 0) return score; // Se só digitou hífens, retorna o score do bónus acima
 
-      let score = 0;
       const titleClean = d.cleanTitleNoStopwords;
-      const fullTitleClean = cleanText(d.title);
-
-      if (fullTitleClean === cleanQ) score += 2000000000;
-      else if (fullTitleClean.includes(cleanQ)) score += 1000000000;
-
-      let exactMatchFound = false;
-      try {
-          const flexQ = cleanQ.replace(/[ \-]/g, '[- ]?');
-          const exactPattern = new RegExp(flexQ, 'i');
-          if (exactPattern.test(d.cleanText)) exactMatchFound = true;
-      } catch(e) {
-          if (d.cleanText.includes(cleanQ)) exactMatchFound = true;
-      }
-
-      if (exactMatchFound) {
-          score += 500000000;
-      } else if (queryWords.length > 1) {
-          try {
-              const sloppyPattern = queryWords.join('.{0,50}');
-              const sloppyRegex = new RegExp(sloppyPattern, 'i');
-              if (sloppyRegex.test(d.cleanText)) score += 250000000; 
-          } catch(e) {}
-      }
 
       let titleMatchedWords = 0;
-      for (const word of queryWords) { if (titleClean.includes(word)) titleMatchedWords++; }
+      for (const word of queryWords) {
+        if (titleClean.includes(word)) titleMatchedWords++;
+      }
 
-      if (titleMatchedWords / queryWords.length >= 0.3) score += Math.pow(titleMatchedWords, 4) * 5000000;
+      const ratioTitle = titleMatchedWords / queryWords.length;
+      if (ratioTitle >= 0.3) {
+        score += Math.pow(titleMatchedWords, 4) * 5000000;
+      }
 
       if (queryWords.length >= 2) {
         for (let i = 0; i <= queryWords.length - 2; i++) {
-          if (titleClean.includes(queryWords.slice(i, i + 2).join(' '))) score += 100000000;
+          const pair = queryWords.slice(i, i + 2).join(' ');
+          if (titleClean.includes(pair)) {
+            score += 100000000;
+          }
         }
       }
 
+      // CORRECAO DA BUSCA: Focar na sequencia exata encontrada no CORPO DO TEXTO
       let longestSeq = 0;
-      for(let len = Math.min(queryWords.length, 15); len >= 2; len--) {
+      for(let len = Math.min(queryWords.length, 15); len >= 3; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
-              if (d.cleanText.includes(queryWords.slice(i, i+len).join(' '))) {
+              const phrase = queryWords.slice(i, i+len).join(' ');
+              if (d.cleanText.includes(phrase)) {
                   if (len > longestSeq) longestSeq = len;
               }
           }
-          if (longestSeq > 0) break;
+          if (longestSeq > 0) break; // achou a maior combinacao do erro
       }
       
-      if (longestSeq >= 4) score += Math.pow(longestSeq, 5) * 50000000; 
-      else if (longestSeq === 3) score += 5000000;
-      else if (longestSeq === 2) score += 500000; 
-
-      let maxWordsInWindow = 0;
-      for (let i = 0; i < d.cleanText.length; i += 80) {
-        let countExact = 0;
-        const textSlice = d.cleanText.substring(i, i + 250);
-        for (const word of queryWords) { if (textSlice.includes(word)) countExact++; }
-        if (countExact > maxWordsInWindow) maxWordsInWindow = countExact;
+      // Se achou uma grande sequencia exata do erro no texto, garantir a posicao 1
+      if (longestSeq >= 4) {
+          score += Math.pow(longestSeq, 5) * 5000000; 
+      } else if (longestSeq === 3) {
+          score += 500000;
       }
-      if (maxWordsInWindow >= 2) score += Math.pow(maxWordsInWindow, 3) * 500;
+
+      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
+        score += 10000;
+      }
+      
+      let maxWordsInWindow = 0;
+      const windowSize = 250;
+
+      for (let i = 0; i < d.cleanText.length; i += 80) {
+        const textSlice = d.cleanText.substring(i, i + windowSize);
+        let countExact = 0;
+
+        for (const word of queryWords) {
+          if (textSlice.includes(word)) countExact++;
+        }
+
+        if (countExact > maxWordsInWindow) {
+          maxWordsInWindow = countExact;
+        }
+      }
+
+      if (maxWordsInWindow >= 2) {
+        score += Math.pow(maxWordsInWindow, 3) * 500;
+      }
 
       return score;
     }
 
     function getParentPathOnly(doc) {
-      const parts = (doc.path || doc.title || '').split(' > ');
-      if (parts.length <= 1) return 'SUPORTE'; 
+      const fullPath = doc.path || doc.title || '';
+      const parts = fullPath.split(' > ');
+      if (parts.length <= 1) return ''; 
       parts.pop(); 
       return parts.join(' > ');
     }
 
     function buildAccentRegex(term) {
-      const charMap = { 'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]', 'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]' };
-      let pattern = escapeRegExp(term.toLowerCase()).split('').map(c => charMap[c] || c).join('');
-      pattern = pattern.replace(/ /g, '\\s+');
-      pattern = pattern.replace(/-/g, '[-\\s]?');
-      return new RegExp(pattern, 'gi');
+      const charMap = {
+        'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]',
+        'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]'
+      };
+      const escaped = escapeRegExp(term.toLowerCase());
+      const pattern = escaped.split('').map(c => charMap[c] || c).join('');
+      // Regex Flexível: Garante que os Highlights pintem a palavra mesmo se tiver um espaço ou hífen
+      return new RegExp(pattern.replace(/ /g, '[\\s\\-]+'), 'gi');
     }
 
-    function formatSnippetText(snippetText) {
-      if (!snippetText) return '';
-      let formatted = snippetText.replace(/[\r\n]{2,}(!\[Imagem\])/g, '\n$1').replace(/(!\[Imagem\]\([^)]+\))[\r\n]{2,}/g, '$1\n');
-      formatted = formatted.replace(/!\[Imagem\]\(([^)]+)\)/g, `<div class="img-container"><img src="$1" alt="Imagem da Documentação" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('$1')" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>`);
-      formatted = formatted.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
-      return formatted.replace(/(?<!href=")(?<!src=")(https?:\/\/[^\s<)]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+    function formatSnippetText(snippetHtml) {
+      if (!snippetHtml) return '';
+
+      let formatted = snippetHtml.replace(
+        /!\[Imagem\]\(([^)]+)\)/g,
+        `<div class="img-container">
+          <img src="$1" 
+               alt="Imagem da Documentação" 
+               onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" 
+               onclick="ampliarImagem('$1')" 
+               title="Clique para ampliar" />
+          <div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div>
+         </div>`
+      );
+
+      formatted = formatted.replace(
+        /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
+        '<a href="$2" target="_blank" rel="noopener">$1</a>'
+      );
+
+      const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<)]+)/g;
+      return formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
     }
 
     function highlightSnippetHtml(htmlContent, rawQuery) {
       if (!htmlContent || !rawQuery) return htmlContent;
+
       const cleanQ = cleanText(rawQuery);
       const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
-      
-      const wordsToHighlight = [rawQuery.trim()];
-      if (queryWords.length > 1) wordsToHighlight.push(...queryWords);
+      const wordsToHighlight = queryWords.length > 0 ? queryWords : [cleanQ];
+
+      // Garante que o termo exato seja destacado (para pintar "t-cloud" integralmente)
+      if (rawQuery.trim().length >= 3) wordsToHighlight.push(rawQuery.trim());
 
       let highlighted = htmlContent;
       for (const word of wordsToHighlight) {
-        if (!word || word.length < 2) continue;
         try {
+          const regHighlight = buildAccentRegex(word);
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
             if (tag) return tag;
-            return text.replace(buildAccentRegex(word), '<mark>$&</mark>');
+            return text.replace(regHighlight, '<mark>$&</mark>');
           });
         } catch (e) {}
       }
+
       return highlighted;
     }
 
+    // O SNIPPET EXATO DO BACKUP 3
     function getSnippet(text, rawQuery) {
       if (!text) return '';
-      if (!rawQuery) return formatSnippetText(text.substring(0, 1500) + (text.length > 1500 ? '...' : ''));
+      if (!rawQuery) return formatSnippetText(text.substring(0, 650) + (text.length > 650 ? '...' : ''));
 
       const cleanQ = cleanText(rawQuery);
       const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+
       let matchIndex = -1;
 
-      const exactRegex = buildAccentRegex(rawQuery.trim());
-      const exactMatch = exactRegex.exec(text);
-      if (exactMatch) matchIndex = exactMatch.index;
-
-      if (matchIndex === -1 && queryWords.length > 1) {
-          try {
-              const sloppySnippetRegex = new RegExp(queryWords.map(w => buildAccentRegex(w).source).join('.{1,60}?'), 'i');
-              const sloppyMatch = sloppySnippetRegex.exec(text);
-              if (sloppyMatch) matchIndex = sloppyMatch.index;
-          } catch(e) {}
-      }
-
-      if (matchIndex === -1 && queryWords.length >= 2) {
+      if (queryWords.length >= 2) {
         let bestCount = 0;
-        for (let i = 0; i <= Math.max(0, text.length - 350); i += 40) {
-          const slice = text.substring(i, i + 350);
-          if (/^https?:\/\//i.test(slice.trim())) continue;
+        const windowSize = 350; // Janela um pouco maior para englobar o bloco do erro inteiro
+        const maxI = Math.max(0, text.length - windowSize);
+        
+        for (let i = 0; i <= maxI; i += 40) {
+          const slice = text.substring(i, i + windowSize);
+          
+          const isUrl = /^https?:\/\//i.test(slice.trim());
+          if (isUrl) continue;
+
           let count = 0;
-          const cSlice = cleanText(slice); 
+          const cSlice = cleanText(slice); // Remocao de acentos do bloco garantida
           for (const w of queryWords) {
             if (cSlice.includes(w)) count++;
-            else if (getStem(w).length >= 4 && cSlice.includes(getStem(w))) count += 0.5;
+            else {
+              const st = getStem(w);
+              if (st.length >= 4 && cSlice.includes(st)) count += 0.5;
+            }
           }
-          if (count > bestCount) { bestCount = count; matchIndex = i; }
+          if (count > bestCount) {
+            bestCount = count;
+            matchIndex = i;
+          }
         }
       }
 
       if (matchIndex === -1 && queryWords.length > 0) {
         for (const word of queryWords) {
           const idx = text.toLowerCase().indexOf(word);
-          if (idx !== -1) { matchIndex = idx; break; }
+          if (idx !== -1) {
+            matchIndex = idx;
+            break;
+          }
         }
       }
 
-      if (matchIndex === -1) return formatSnippetText(text.substring(0, 1500) + (text.length > 1500 ? '...' : ''));
+      if (matchIndex === -1) {
+        return formatSnippetText(text.substring(0, 650) + (text.length > 650 ? '...' : ''));
+      }
 
-      const start = Math.max(0, matchIndex - 200);
-      const end = Math.min(text.length, matchIndex + 1500);
-      return highlightSnippetHtml(formatSnippetText((start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '')), rawQuery);
+      const start = Math.max(0, matchIndex - 120);
+      const end = Math.min(text.length, matchIndex + 800);
+      let snippet = (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
+
+      const formattedHtml = formatSnippetText(snippet);
+      return highlightSnippetHtml(formattedHtml, rawQuery);
     }
 
     function render() {
@@ -520,124 +829,352 @@
       btnClearSearch.style.display = rawQuery ? 'flex' : 'none';
 
       if (!rawQuery) {
-        // VIEW: Dashboard Inicial (Miniaturas)
+        // VIEW: DASHBOARD FIXO E EXATO
+        let inicialDocs = [];
+        
+        MENU_PRINCIPAL.forEach(titulo => {
+            const searchTitle = titulo.toLowerCase();
+            
+            // Tenta Match exato do titulo do documento
+            let matches = searchDocs.filter(d => (d.title || "").toLowerCase() === searchTitle);
+            
+            // Se não encontrou, tenta ver se a pagina termina com o nome (Ex: "RM Integrações")
+            if (matches.length === 0) {
+                matches = searchDocs.filter(d => (d.title || "").toLowerCase().endsWith(searchTitle));
+            }
+
+            // Se mesmo assim não encontrou, tenta qualquer um que contenha
+            if (matches.length === 0) {
+                matches = searchDocs.filter(d => (d.title || "").toLowerCase().includes(searchTitle));
+            }
+            
+            if (matches.length > 0) {
+                matches.sort((a,b) => (a.path||'').length - (b.path||'').length);
+                const docToPush = Object.assign({}, matches[0]);
+                docToPush.displayTitle = titulo; // Força o título a ser EXATAMENTE o que pediu no array
+                
+                if (!inicialDocs.some(doc => doc.id === docToPush.id)) {
+                    inicialDocs.push(docToPush);
+                }
+            }
+        });
+
         gridWrapper.className = 'grid-thumbnails';
-        gridWrapper.innerHTML = SORTED_DOCS.map(d => `
-          <a href="${d.url || '#'}" target="_blank" rel="noopener" class="card-thumb" title="${d.title}">
+        gridWrapper.innerHTML = inicialDocs.map(d => `
+          <a href="${d.url || '#'}" target="_blank" rel="noopener" class="card-thumb" title="${d.displayTitle}">
             <div class="thumb-path">${getParentPathOnly(d)}</div>
-            <div class="thumb-title">${d.title}</div>
+            <div class="thumb-title">${d.displayTitle}</div>
           </a>
         `).join('');
-        count.textContent = `${SORTED_DOCS.length} documentações disponíveis para consulta.`;
-      } else {
-        // VIEW: Pesquisa (2 Colunas com Snippets)
-        gridWrapper.className = 'grid';
-        let results = searchDocs.map(d => ({ ...d, _score: getScore(d, rawQuery) }));
-        
-        const directMatches = results.filter(d => d._score > 0).sort((a, b) => b._score - a._score);
-        let fuseMatches = (directMatches.length === 0 || directMatches[0]._score < 1000000) 
-            ? fuse.search(getKeywords(rawQuery).join(' ') || rawQuery).map(r => r.item).filter(d => !directMatches.some(dm => dm.id === d.id)) 
-            : [];
-        results = [...directMatches, ...fuseMatches];
-
-        gridWrapper.innerHTML = results.map(d => `
-          <div class="card">
-            ${getParentPathOnly(d) ? `<div class="path-parent">${getParentPathOnly(d)}</div>` : ''}
-            <h3><a href="${d.url || '#'}" target="_blank" rel="noopener">${d.title}</a></h3>
-            <div class="snippet">${getSnippet(d.text, rawQuery)}</div>
-          </div>
-        `).join('');
-
-        count.textContent = `${results.length} resultado(s) encontrado(s)`;
+        count.textContent = `${inicialDocs.length} documentações principais em atalho.`;
+        return;
       }
+
+      // VIEW: PESQUISA (2 COLUNAS)
+      gridWrapper.className = 'grid';
+
+      const scoredDocs = searchDocs.map(d => ({
+        ...d,
+        _score: getScore(d, rawQuery)
+      }));
+
+      const directMatches = scoredDocs
+        .filter(d => d._score > 0)
+        .sort((a, b) => b._score - a._score);
+
+      const queryWords = getKeywords(rawQuery);
+      const cleanSearchQuery = queryWords.join(' ');
+
+      let fuseMatches = [];
+      if (directMatches.length === 0 || directMatches[0]._score < 1000000) {
+        fuseMatches = fuse.search(cleanSearchQuery || rawQuery)
+          .map(r => r.item)
+          .filter(d => !directMatches.some(dm => dm.id === d.id));
+      }
+
+      const results = [...directMatches, ...fuseMatches];
+
+      gridWrapper.innerHTML = results.map(d => {
+        const parentPath = getParentPathOnly(d);
+        const snippetContent = getSnippet(d.text, rawQuery);
+        return `
+          <div class="card">
+            ${parentPath ? `<div class="path-parent">${parentPath}</div>` : ''}
+            <h3><a href="${d.url || '#'}" target="_blank" rel="noopener">${d.title}</a></h3>
+            <div class="snippet">${snippetContent}</div>
+          </div>
+        `;
+      }).join('');
+
+      count.textContent = `${results.length} resultado(s) encontrado(s)`;
     }
 
     async function processarImagemOCR(imageSource) {
-      ocrStatus.style.display = "block"; ocrStatus.textContent = "Processando imagem do erro via OCR...";
+      ocrStatus.style.display = "block";
+      ocrStatus.textContent = "Processando imagem do erro via OCR...";
+
       try {
         const worker = await Tesseract.createWorker('por');
         const ret = await worker.recognize(imageSource);
         await worker.terminate();
-        const textoLido = (ret.data.text || "").replace(/[\r\n]+/g, ' ').replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(word => cleanText(word).length >= 2 && !STOP_WORDS.has(cleanText(word))).join(' ');
 
-        if (textoLido.length > 0) { q.value = textoLido; render(); ocrStatus.textContent = "Texto extraído com sucesso!"; } 
-        else { ocrStatus.textContent = "Nenhum texto relevante foi identificado."; }
-      } catch (err) { ocrStatus.textContent = "Erro ao processar imagem de erro."; }
+        let rawText = ret.data.text || "";
+
+        let cleanTextStr = rawText
+          .replace(/[\r\n]+/g, ' ')
+          .replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+
+        const palavrasRelevantes = cleanTextStr.split(' ').filter(word => {
+          const wClean = cleanText(word);
+          return wClean.length >= 2 && !STOP_WORDS.has(wClean);
+        });
+
+        const textoLido = palavrasRelevantes.join(' ');
+
+        if (textoLido.length > 0) {
+          q.value = textoLido;
+          render();
+          ocrStatus.textContent = "Texto extraído com sucesso!";
+        } else {
+          ocrStatus.textContent = "Nenhum texto relevante foi identificado.";
+        }
+      } catch (err) {
+        console.error(err);
+        ocrStatus.textContent = "Erro ao processar imagem de erro.";
+      }
+
       setTimeout(() => { ocrStatus.style.display = "none"; }, 4000);
     }
 
-    fileInput.addEventListener('change', (e) => { if (e.target.files && e.target.files[0]) processarImagemOCR(e.target.files[0]); });
-    
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files && e.target.files[0]) {
+        processarImagemOCR(e.target.files[0]);
+      }
+    });
+
     document.addEventListener('paste', (e) => {
-      if (document.getElementById('modalFeedback').style.display !== 'flex') {
-        for (const item of (e.clipboardData || e.originalEvent.clipboardData).items) {
-          if (item.type.indexOf("image") === 0) { processarImagemOCR(item.getAsFile()); break; }
+      const modalVisivel = document.getElementById('modalFeedback').style.display === 'flex';
+      const painelVisivel = document.getElementById('modalPainel').style.display === 'flex';
+      if (!modalVisivel && !painelVisivel) {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+          if (item.type.indexOf("image") === 0) {
+            const blob = item.getAsFile();
+            processarImagemOCR(blob);
+            break;
+          }
         }
       }
     });
 
-    q.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
-    
-    // CORREÇÃO: Limpa os destaques azuis mas mantém a pesquisa na tela
-    btnClearSearch.addEventListener('click', (e) => { 
-      e.preventDefault(); 
-      e.stopPropagation(); 
+    const fbEditor = document.getElementById('fbEditor');
+    if (fbEditor) {
+      fbEditor.addEventListener('paste', (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (const item of items) {
+          if (item.type.indexOf("image") === 0) {
+            e.preventDefault();
+            const blob = item.getAsFile();
+            processarImagemLocal(blob);
+            break;
+          }
+        }
+      });
+    }
+
+    // Comportamento EXCLUSIVO para remover os highlights azuis sem atualizar a pagina 
+    btnClearSearch.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
       
-      q.value = ''; 
-      btnClearSearch.style.display = 'none'; 
+      q.value = '';
+      btnClearSearch.style.display = 'none';
       
-      document.querySelectorAll('#gridWrapper mark').forEach(m => { 
-        m.parentNode.replaceChild(document.createTextNode(m.textContent), m); 
-      }); 
-      
-      q.blur(); 
+      const marks = document.getElementById('gridWrapper').querySelectorAll('mark');
+      marks.forEach(mark => {
+        const parent = mark.parentNode;
+        const textNode = document.createTextNode(mark.textContent);
+        parent.replaceChild(textNode, mark);
+        parent.normalize(); 
+      });
     });
 
-    let debounceTimer;
-    q.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(render, 300); });
-
+    q.addEventListener('input', render);
+    count.textContent = `${DOCS.length} documentações carregadas.`;
     render();
   }
 
   function ampliarImagem(url) {
-    const modal = document.getElementById('imgModal'), modalImg = document.getElementById('imgModalSrc');
-    if (modal && modalImg) { modalImg.src = url; modal.style.display = 'flex'; }
-  }
-  function fecharModalImagem() { document.getElementById('imgModal').style.display = 'none'; }
-  function abrirModalFeedback() { document.getElementById('modalFeedback').style.display = 'flex'; }
-  function fecharModalFeedback() { 
-      document.getElementById('modalFeedback').style.display = 'none';
-      document.getElementById('fbEditor').value = '';
-      document.getElementById('fbDoc').value = '';
-      document.getElementById('fbTicket').value = '';
+    const modal = document.getElementById('imgModal');
+    const modalImg = document.getElementById('imgModalSrc');
+    if (modal && modalImg) {
+      modalImg.src = url;
+      modal.style.display = 'flex';
+    }
   }
 
-  async function enviarFeedbackWebhook() {
+  function fecharModalImagem() {
+    const modal = document.getElementById('imgModal');
+    if (modal) {
+      modal.style.display = 'none';
+    }
+  }
+
+  function abrirModalFeedback() {
+    fecharPainelSugestoes();
+    document.getElementById('modalFeedback').style.display = 'flex';
+  }
+
+  function processarImagemLocal(file) {
+    const status = document.getElementById('uploadStatus');
+    status.style.display = 'block';
+    status.textContent = '⏳ Processando imagem colada...';
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const base64Src = e.target.result;
+      document.execCommand('insertHTML', false, `<br/><img src="${base64Src}" onclick="ampliarImagem('${base64Src}')" /><br/>`);
+      status.textContent = '✅ Imagem anexada!';
+      setTimeout(() => { status.style.display = 'none'; }, 2000);
+    };
+    reader.onerror = function() {
+      alert('Erro ao carregar a imagem colada.');
+      status.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function fecharModalFeedback() {
+    document.getElementById('modalFeedback').style.display = 'none';
+    const editor = document.getElementById('fbEditor');
+    const docInput = document.getElementById('fbDoc');
+    const autorInput = document.getElementById('fbAutor');
+    if (editor) editor.innerHTML = '';
+    if (docInput) docInput.value = '';
+    if (autorInput) autorInput.value = '';
+  }
+
+  function salvarFeedbackLocal() {
     const autor = document.getElementById('fbAutor').value.trim();
     const tipo = document.getElementById('fbTipo').value;
     const doc = document.getElementById('fbDoc').value.trim();
-    const ticket = document.getElementById('fbTicket').value.trim();
-    const texto = document.getElementById('fbEditor').value.trim();
-    const btnSubmit = document.getElementById('btnEnviarFb');
+    const editor = document.getElementById('fbEditor');
+    const htmlContent = editor.innerHTML.trim();
+    const textContent = editor.innerText.trim();
 
-    if (!autor) { alert("Por favor, preencha o seu Nome."); return; }
+    if (!autor) {
+      alert("Por favor, preencha o campo de identificação (Seu Nome / E-mail).");
+      return;
+    }
 
-    btnSubmit.disabled = true;
-    btnSubmit.textContent = "⏳ Enviando...";
+    if (!textContent) {
+      alert("Por favor, preencha o detalhamento da sugestão/correção.");
+      return;
+    }
 
-    const payload = { autor, tipo, doc, ticket, texto, data: new Date().toISOString() };
+    const feedbacks = JSON.parse(localStorage.getItem('cdc_feedbacks') || '[]');
+
+    const novoFeedback = {
+      id: Date.now(),
+      autor: autor,
+      data: new Date().toLocaleString('pt-BR'),
+      tipo: tipo,
+      doc: doc || 'Geral',
+      html: htmlContent,
+      texto: textContent
+    };
+
+    feedbacks.unshift(novoFeedback);
+    localStorage.setItem('cdc_feedbacks', JSON.stringify(feedbacks));
+
+    alert("Sugestão enviada com sucesso para o Painel!");
+    fecharModalFeedback();
+    abrirPainelSugestoes();
+  }
+
+  function abrirPainelSugestoes() {
+    renderizarPainel();
+    document.getElementById('modalPainel').style.display = 'flex';
+  }
+
+  function fecharPainelSugestoes() {
+    document.getElementById('modalPainel').style.display = 'none';
+  }
+
+  function renderizarPainel() {
+    const container = document.getElementById('painelList');
+    const feedbacks = JSON.parse(localStorage.getItem('cdc_feedbacks') || '[]');
+
+    if (feedbacks.length === 0) {
+      container.innerHTML = `<p style="color: var(--muted); text-align: center; padding: 20px;">Nenhuma sugestão ou correção registrada até o momento.</p>`;
+      return;
+    }
+
+    container.innerHTML = feedbacks.map(item => `
+      <div class="fb-item-card" id="item-${item.id}">
+        <div class="fb-item-header">
+          <div class="fb-header-left">
+            <div><span class="fb-tag">${item.tipo}</span></div>
+            <div class="fb-doc-title">${item.doc}</div>
+          </div>
+          <div class="fb-header-right">
+            <div class="fb-author">👤 Enviado por: ${item.autor}</div>
+            <div class="fb-date">${item.data}</div>
+          </div>
+        </div>
+        <div class="fb-content" id="content-${item.id}">${item.html}</div>
+        <div class="fb-item-actions">
+          <button class="btn-action" onclick="copiarTextoFormatadoItem(${item.id})">📝 Copiar Texto Formatado</button>
+          <button class="btn-danger" onclick="excluirFeedback(${item.id})">🗑️ Excluir</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function copiarTextoFormatadoItem(id) {
+    const contentDiv = document.getElementById(`content-${id}`);
+    if (!contentDiv) return;
 
     try {
-      const URL_WEBHOOK = "https://hook.us2.make.com/zc6poqt4l48vtgcyhwbnyj5ziuktpm74";
-      await fetch(URL_WEBHOOK, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-      alert("🎉 Sua documentação foi enviada com sucesso para a fila de avaliação!");
-      fecharModalFeedback();
-    } catch (erro) {
-      alert("Erro ao enviar. Verifique sua conexão e tente novamente.");
-    } finally {
-      btnSubmit.disabled = false;
-      btnSubmit.textContent = "Enviar";
+      const clone = contentDiv.cloneNode(true);
+
+      const imgs = clone.querySelectorAll('img');
+      imgs.forEach(img => {
+        const marker = document.createElement('div');
+        marker.textContent = '\n\n[ Imagem ]\n\n';
+        img.replaceWith(marker);
+      });
+
+      const blocks = clone.querySelectorAll('div, p, br, li');
+      blocks.forEach(b => {
+        if (b.tagName.toLowerCase() === 'br') {
+          b.replaceWith('\n');
+        } else {
+          b.prepend('\n');
+        }
+      });
+
+      const textoLimpo = clone.innerText
+        .replace(/\n{3,}/g, '\n\n')
+        .trim();
+
+      await navigator.clipboard.writeText(textoLimpo);
+      alert("✅ Texto e marcadores de imagem copiados! Pressione Ctrl+V no Notion.");
+    } catch (err) {
+      console.error(err);
+      alert("Erro ao copiar o texto.");
     }
+  }
+
+  function excluirFeedback(id) {
+    if (!confirm("Tem certeza que deseja excluir esta sugestão?")) return;
+
+    let feedbacks = JSON.parse(localStorage.getItem('cdc_feedbacks') || '[]');
+    feedbacks = feedbacks.filter(f => f.id !== id);
+    localStorage.setItem('cdc_feedbacks', JSON.stringify(feedbacks));
+    renderizarPainel();
   }
 </script>
 </body>
