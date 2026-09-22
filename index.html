@@ -198,7 +198,7 @@
   </div>
 </main>
 
-<!-- Modal de Envio (Text Only) -->
+<!-- Modal de Envio -->
 <div class="modal-backdrop" id="modalFeedback">
   <div class="modal-box" style="max-width: 800px; width: 90%;">
     <div class="modal-header">
@@ -270,11 +270,12 @@
     const fileInput = document.getElementById('fileInput');
     const ocrStatus = document.getElementById('ocrStatus');
 
-    const STOP_WORDS = new Set(["de", "da", "do", "das", "dos", "ao", "aos", "em", "na", "nos", "nas", "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "foi", "que", "ha", "este", "esta", "and", "or", "to", "in", "for", "with", "of", "vw", "atencao"]);
+    const STOP_WORDS = new Set(["de", "da", "do", "das", "dos", "ao", "aos", "em", "na", "nos", "nas", "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "foi", "que", "ha", "este", "esta", "and", "or", "to", "in", "for", "with", "of", "vw", "atencao", "e"]);
 
     function cleanText(s) {
       if (!s) return '';
-      return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+      // Alterado para preservar hifens (-) e permitir buscas como T-CLOUD
+      return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\-]/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
     function removeUrlsFromText(text) { return text ? text.replace(/https?:\/\/[^\s<)]+/gi, '') : ''; }
@@ -304,6 +305,19 @@
 
       let score = 0;
       const titleClean = d.cleanTitleNoStopwords;
+      const fullTitleClean = cleanText(d.title);
+
+      // PRIORIDADE 1: Correspondência Exata no Título
+      if (fullTitleClean === cleanQ) {
+          score += 2000000000;
+      } else if (fullTitleClean.includes(cleanQ)) {
+          score += 1000000000;
+      }
+
+      // PRIORIDADE 2: Correspondência Exata na Documentação (Resolve o "política de backup")
+      if (d.cleanText.includes(cleanQ)) {
+          score += 500000000;
+      }
 
       let titleMatchedWords = 0;
       for (const word of queryWords) { if (titleClean.includes(word)) titleMatchedWords++; }
@@ -329,8 +343,6 @@
       if (longestSeq >= 4) score += Math.pow(longestSeq, 5) * 50000000; 
       else if (longestSeq === 3) score += 5000000;
 
-      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) score += 10000;
-      
       let maxWordsInWindow = 0;
       for (let i = 0; i < d.cleanText.length; i += 80) {
         let countExact = 0;
@@ -352,7 +364,9 @@
 
     function buildAccentRegex(term) {
       const charMap = { 'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]', 'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]' };
-      const pattern = escapeRegExp(term.toLowerCase()).split('').map(c => charMap[c] || c).join('');
+      let pattern = escapeRegExp(term.toLowerCase()).split('').map(c => charMap[c] || c).join('');
+      // Permite que espaços sejam reconhecidos corretamente na busca por frases inteiras
+      pattern = pattern.replace(/ /g, '\\s+');
       return new RegExp(pattern, 'gi');
     }
 
@@ -366,10 +380,18 @@
 
     function highlightSnippetHtml(htmlContent, rawQuery) {
       if (!htmlContent || !rawQuery) return htmlContent;
-      const queryWords = cleanText(rawQuery).split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
-      const wordsToHighlight = queryWords.length > 0 ? queryWords : [cleanText(rawQuery)];
+      const cleanQ = cleanText(rawQuery);
+      const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+      
+      // Adiciona a frase inteira para tentar pintá-la por completo primeiro
+      const wordsToHighlight = [rawQuery.trim()];
+      if (queryWords.length > 1) {
+          wordsToHighlight.push(...queryWords);
+      }
+
       let highlighted = htmlContent;
       for (const word of wordsToHighlight) {
+        if (!word || word.length < 2) continue;
         try {
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
             if (tag) return tag;
@@ -384,10 +406,19 @@
       if (!text) return '';
       if (!rawQuery) return formatSnippetText(text.substring(0, 1500) + (text.length > 1500 ? '...' : ''));
 
-      const queryWords = cleanText(rawQuery).split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+      const cleanQ = cleanText(rawQuery);
+      const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
       let matchIndex = -1;
 
-      if (queryWords.length >= 2) {
+      // Tenta encontrar a frase exata primeiro
+      const exactRegex = buildAccentRegex(rawQuery.trim());
+      const exactMatch = exactRegex.exec(text);
+      if (exactMatch) {
+          matchIndex = exactMatch.index;
+      }
+
+      // Fallback para lógica de palavras soltas
+      if (matchIndex === -1 && queryWords.length >= 2) {
         let bestCount = 0;
         for (let i = 0; i <= Math.max(0, text.length - 350); i += 40) {
           const slice = text.substring(i, i + 350);
@@ -447,7 +478,7 @@
         const worker = await Tesseract.createWorker('por');
         const ret = await worker.recognize(imageSource);
         await worker.terminate();
-        const textoLido = (ret.data.text || "").replace(/[\r\n]+/g, ' ').replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(word => cleanText(word).length >= 2 && !STOP_WORDS.has(cleanText(word))).join(' ');
+        const textoLido = (ret.data.text || "").replace(/[\r\n]+/g, ' ').replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(word => cleanText(word).length >= 2 && !STOP_WORDS.has(cleanText(word))).join(' ');
 
         if (textoLido.length > 0) { q.value = textoLido; render(); ocrStatus.textContent = "Texto extraído com sucesso!"; } 
         else { ocrStatus.textContent = "Nenhum texto relevante foi identificado."; }
