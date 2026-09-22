@@ -13,7 +13,7 @@ if (fs.existsSync(".env")) {
   });
 }
 
-const NOTION_TOKEN = process.env.NOTION_TOKEN || "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";
+const NOTION_TOKEN = process.env.NOTION_TOKEN;
 const PAGE_ID = "70cbd5429ec38371a96d81e62c92929d";
 
 // Cria pasta assets local para armazenar as imagens permanentemente

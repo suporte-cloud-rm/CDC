@@ -1,0 +1,31 @@
+name: Sincronização Diária do Notion
+
+on:
+  schedule:
+    - cron: '0 9,21 * * *' # Executa às 6h e 18h (Horário de Brasília)
+  workflow_dispatch: # Permite executar manualmente pelo site do GitHub se precisar
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Rodar script de extração
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+        run: node fetch-notion.mjs
+
+      - name: Atualizar repositório
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          git add .
+          git commit -m "Sincronização automática do Notion" || echo "Nenhuma alteração detectada"
+          git push
