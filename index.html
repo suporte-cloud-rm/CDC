@@ -20,7 +20,9 @@
     * { box-sizing: border-box; }
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
     header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: rgba(11,15,25,.85); border-bottom: 1px solid var(--border); }
-    .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+    
+    .wrap { max-width: 1500px; margin: 0 auto; padding: 16px; }
+    
     .top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
     .brand { font-weight: 700; font-size: 18px; }
     
@@ -82,8 +84,21 @@
     #fileInput { display: none; }
 
     main { padding: 18px 0 40px; }
-    .grid { display: grid; grid-template-columns: 1fr; gap: 16px; }
     
+    /* Grid de Pesquisa (2 colunas) */
+    .grid { display: grid; grid-template-columns: 1fr; gap: 20px; }
+    @media (min-width: 992px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    /* Grid do Dashboard Inicial (Múltiplas colunas com miniaturas) */
+    .grid-thumbnails {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    
+    /* Card da Pesquisa (com balão) */
     .card { 
       background: var(--card); 
       border: 1px solid var(--border); 
@@ -93,8 +108,46 @@
       flex-direction: column; 
       gap: 4px; 
       transition: border-color 0.2s ease;
+      height: 100%;
     }
     .card:hover { border-color: rgba(90, 167, 255, 0.4); }
+
+    /* Card Miniatura (Dashboard Inicial) */
+    .card-thumb {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s ease;
+      height: 100%;
+    }
+    .card-thumb:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(90, 167, 255, 0.1);
+      background: #162032;
+    }
+    .thumb-path {
+      color: var(--breadcrumb-green);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .thumb-title {
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+    .card-thumb:hover .thumb-title { color: var(--accent); }
     
     .path-parent { 
       color: var(--breadcrumb-green); 
@@ -123,12 +176,13 @@
       border-radius: 10px;
       border: 1px solid rgba(90, 167, 255, 0.25);
       box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
+      flex-grow: 1;
     }
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
     .snippet .img-container { display: block; margin: 6px 0; position: relative; }
-    .snippet img { max-width: 380px; max-height: 240px; object-fit: cover; display: block; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; margin: 4px 0; transition: transform 0.2s ease, border-color 0.2s ease; }
+    .snippet img { max-width: 100%; height: auto; max-height: 280px; object-fit: contain; object-position: left; display: block; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.15); cursor: pointer; margin: 4px 0; transition: transform 0.2s ease, border-color 0.2s ease; }
     .snippet img:hover { transform: scale(1.02); border-color: var(--accent); }
 
     .img-fallback-msg { display: none; font-size: 12px; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px dashed rgba(255, 193, 7, 0.4); padding: 6px 10px; border-radius: 6px; }
@@ -194,7 +248,7 @@
 
 <main>
   <div class="wrap">
-    <div class="grid" id="grid"></div>
+    <div id="gridWrapper"></div>
   </div>
 </main>
 
@@ -263,7 +317,10 @@
 
   if (autenticar()) {
     const DOCS = (typeof DATA !== 'undefined' && DATA.docs) ? DATA.docs : [];
-    const grid = document.getElementById('grid');
+    // Ordena as documentações alfabeticamente para o Dashboard inicial
+    const SORTED_DOCS = [...DOCS].sort((a, b) => (a.path || a.title).localeCompare(b.path || b.title));
+    
+    const gridWrapper = document.getElementById('gridWrapper');
     const q = document.getElementById('q');
     const btnClearSearch = document.getElementById('btnClearSearch');
     const count = document.getElementById('count');
@@ -274,7 +331,6 @@
 
     function cleanText(s) {
       if (!s) return '';
-      // Alterado para preservar hifens (-) e permitir buscas como T-CLOUD
       return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9\-]/g, ' ').replace(/\s+/g, ' ').trim();
     }
 
@@ -307,16 +363,26 @@
       const titleClean = d.cleanTitleNoStopwords;
       const fullTitleClean = cleanText(d.title);
 
-      // PRIORIDADE 1: Correspondência Exata no Título
-      if (fullTitleClean === cleanQ) {
-          score += 2000000000;
-      } else if (fullTitleClean.includes(cleanQ)) {
-          score += 1000000000;
+      if (fullTitleClean === cleanQ) score += 2000000000;
+      else if (fullTitleClean.includes(cleanQ)) score += 1000000000;
+
+      let exactMatchFound = false;
+      try {
+          const flexQ = cleanQ.replace(/[ \-]/g, '[- ]?');
+          const exactPattern = new RegExp(flexQ, 'i');
+          if (exactPattern.test(d.cleanText)) exactMatchFound = true;
+      } catch(e) {
+          if (d.cleanText.includes(cleanQ)) exactMatchFound = true;
       }
 
-      // PRIORIDADE 2: Correspondência Exata na Documentação (Resolve o "política de backup")
-      if (d.cleanText.includes(cleanQ)) {
+      if (exactMatchFound) {
           score += 500000000;
+      } else if (queryWords.length > 1) {
+          try {
+              const sloppyPattern = queryWords.join('.{0,50}');
+              const sloppyRegex = new RegExp(sloppyPattern, 'i');
+              if (sloppyRegex.test(d.cleanText)) score += 250000000; 
+          } catch(e) {}
       }
 
       let titleMatchedWords = 0;
@@ -331,7 +397,7 @@
       }
 
       let longestSeq = 0;
-      for(let len = Math.min(queryWords.length, 15); len >= 3; len--) {
+      for(let len = Math.min(queryWords.length, 15); len >= 2; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
               if (d.cleanText.includes(queryWords.slice(i, i+len).join(' '))) {
                   if (len > longestSeq) longestSeq = len;
@@ -342,6 +408,7 @@
       
       if (longestSeq >= 4) score += Math.pow(longestSeq, 5) * 50000000; 
       else if (longestSeq === 3) score += 5000000;
+      else if (longestSeq === 2) score += 500000; 
 
       let maxWordsInWindow = 0;
       for (let i = 0; i < d.cleanText.length; i += 80) {
@@ -357,7 +424,7 @@
 
     function getParentPathOnly(doc) {
       const parts = (doc.path || doc.title || '').split(' > ');
-      if (parts.length <= 1) return ''; 
+      if (parts.length <= 1) return 'SUPORTE'; 
       parts.pop(); 
       return parts.join(' > ');
     }
@@ -365,8 +432,8 @@
     function buildAccentRegex(term) {
       const charMap = { 'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]', 'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]' };
       let pattern = escapeRegExp(term.toLowerCase()).split('').map(c => charMap[c] || c).join('');
-      // Permite que espaços sejam reconhecidos corretamente na busca por frases inteiras
       pattern = pattern.replace(/ /g, '\\s+');
+      pattern = pattern.replace(/-/g, '[-\\s]?');
       return new RegExp(pattern, 'gi');
     }
 
@@ -383,11 +450,8 @@
       const cleanQ = cleanText(rawQuery);
       const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
       
-      // Adiciona a frase inteira para tentar pintá-la por completo primeiro
       const wordsToHighlight = [rawQuery.trim()];
-      if (queryWords.length > 1) {
-          wordsToHighlight.push(...queryWords);
-      }
+      if (queryWords.length > 1) wordsToHighlight.push(...queryWords);
 
       let highlighted = htmlContent;
       for (const word of wordsToHighlight) {
@@ -410,14 +474,18 @@
       const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
       let matchIndex = -1;
 
-      // Tenta encontrar a frase exata primeiro
       const exactRegex = buildAccentRegex(rawQuery.trim());
       const exactMatch = exactRegex.exec(text);
-      if (exactMatch) {
-          matchIndex = exactMatch.index;
+      if (exactMatch) matchIndex = exactMatch.index;
+
+      if (matchIndex === -1 && queryWords.length > 1) {
+          try {
+              const sloppySnippetRegex = new RegExp(queryWords.map(w => buildAccentRegex(w).source).join('.{1,60}?'), 'i');
+              const sloppyMatch = sloppySnippetRegex.exec(text);
+              if (sloppyMatch) matchIndex = sloppyMatch.index;
+          } catch(e) {}
       }
 
-      // Fallback para lógica de palavras soltas
       if (matchIndex === -1 && queryWords.length >= 2) {
         let bestCount = 0;
         for (let i = 0; i <= Math.max(0, text.length - 350); i += 40) {
@@ -451,25 +519,37 @@
       const rawQuery = q.value.trim();
       btnClearSearch.style.display = rawQuery ? 'flex' : 'none';
 
-      let results = rawQuery ? searchDocs.map(d => ({ ...d, _score: getScore(d, rawQuery) })) : searchDocs;
-      
-      if (rawQuery) {
+      if (!rawQuery) {
+        // VIEW: Dashboard Inicial (Miniaturas)
+        gridWrapper.className = 'grid-thumbnails';
+        gridWrapper.innerHTML = SORTED_DOCS.map(d => `
+          <a href="${d.url || '#'}" target="_blank" rel="noopener" class="card-thumb" title="${d.title}">
+            <div class="thumb-path">${getParentPathOnly(d)}</div>
+            <div class="thumb-title">${d.title}</div>
+          </a>
+        `).join('');
+        count.textContent = `${SORTED_DOCS.length} documentações disponíveis para consulta.`;
+      } else {
+        // VIEW: Pesquisa (2 Colunas com Snippets)
+        gridWrapper.className = 'grid';
+        let results = searchDocs.map(d => ({ ...d, _score: getScore(d, rawQuery) }));
+        
         const directMatches = results.filter(d => d._score > 0).sort((a, b) => b._score - a._score);
         let fuseMatches = (directMatches.length === 0 || directMatches[0]._score < 1000000) 
             ? fuse.search(getKeywords(rawQuery).join(' ') || rawQuery).map(r => r.item).filter(d => !directMatches.some(dm => dm.id === d.id)) 
             : [];
         results = [...directMatches, ...fuseMatches];
+
+        gridWrapper.innerHTML = results.map(d => `
+          <div class="card">
+            ${getParentPathOnly(d) ? `<div class="path-parent">${getParentPathOnly(d)}</div>` : ''}
+            <h3><a href="${d.url || '#'}" target="_blank" rel="noopener">${d.title}</a></h3>
+            <div class="snippet">${getSnippet(d.text, rawQuery)}</div>
+          </div>
+        `).join('');
+
+        count.textContent = `${results.length} resultado(s) encontrado(s)`;
       }
-
-      grid.innerHTML = results.map(d => `
-        <div class="card">
-          ${getParentPathOnly(d) ? `<div class="path-parent">${getParentPathOnly(d)}</div>` : ''}
-          <h3><a href="${d.url || '#'}" target="_blank" rel="noopener">${d.title}</a></h3>
-          <div class="snippet">${getSnippet(d.text, rawQuery)}</div>
-        </div>
-      `).join('');
-
-      count.textContent = `${results.length} resultado(s) encontrado(s)`;
     }
 
     async function processarImagemOCR(imageSource) {
@@ -497,12 +577,25 @@
     });
 
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') e.preventDefault(); });
-    btnClearSearch.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); q.value = ''; btnClearSearch.style.display = 'none'; document.querySelectorAll('#grid mark').forEach(m => { m.parentNode.replaceChild(document.createTextNode(m.textContent), m); }); render(); });
+    
+    // CORREÇÃO: Limpa os destaques azuis mas mantém a pesquisa na tela
+    btnClearSearch.addEventListener('click', (e) => { 
+      e.preventDefault(); 
+      e.stopPropagation(); 
+      
+      q.value = ''; 
+      btnClearSearch.style.display = 'none'; 
+      
+      document.querySelectorAll('#gridWrapper mark').forEach(m => { 
+        m.parentNode.replaceChild(document.createTextNode(m.textContent), m); 
+      }); 
+      
+      q.blur(); 
+    });
 
     let debounceTimer;
     q.addEventListener('input', () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(render, 300); });
 
-    count.textContent = `${DOCS.length} documentações carregadas.`;
     render();
   }
 
