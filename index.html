@@ -21,7 +21,6 @@
     body { margin: 0; font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); }
     header { position: sticky; top: 0; z-index: 10; backdrop-filter: blur(10px); background: rgba(11,15,25,.85); border-bottom: 1px solid var(--border); }
     
-    /* Espaço maximizado para aproveitamento lateral (2 Colunas) */
     .wrap { max-width: 1700px; width: 96%; margin: 0 auto; padding: 16px; }
     
     .top { display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
@@ -85,17 +84,15 @@
 
     main { padding: 18px 0 40px; }
     
-    /* Grid de Pesquisa (2 colunas) */
     .grid { display: grid; grid-template-columns: 1fr; gap: 24px; }
     @media (min-width: 992px) {
       .grid { grid-template-columns: 1fr 1fr; }
     }
 
-    /* Grid do Dashboard Inicial */
     .grid-thumbnails {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+      gap: 16px;
     }
     
     .card { 
@@ -111,7 +108,6 @@
     }
     .card:hover { border-color: rgba(90, 167, 255, 0.4); }
 
-    /* Card Miniatura (Dashboard Inicial com Subpáginas) */
     .card-thumb {
       background: var(--card);
       border: 1px solid var(--border);
@@ -197,7 +193,6 @@
     .card h3 a { color: var(--accent); text-decoration: none; }
     .card h3 a:hover { opacity: 0.85; }
     
-    /* SNIPPET - Ajustado para visualização em blocos imensos */
     .snippet { 
       color: #c0cdf0; 
       font-size: 14.5px; 
@@ -217,25 +212,24 @@
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
-    /* IMAGENS SUPER COLADAS AO TEXTO */
     .snippet .img-container {
-      display: block;
-      margin: 0;
-      padding: 0;
+      display: inline-block;
+      margin: 1px 0;
       position: relative;
     }
 
     .snippet img {
-      max-width: 100%;
+      max-width: 240px;
+      max-height: 140px;
+      width: auto;
       height: auto;
-      max-height: 350px;
       object-fit: contain;
       object-position: left;
       display: block;
       border-radius: 6px;
       border: 1px solid rgba(255, 255, 255, 0.15);
       cursor: pointer;
-      margin: 2px 0; /* Espaço quase nulo */
+      margin: 2px 0;
       transition: transform 0.2s ease, border-color 0.2s ease;
     }
 
@@ -276,7 +270,7 @@
     <div class="top">
       <div class="brand">Central de Conhecimento - Suporte Cloud (RM)</div>
       <div class="actions-top">
-        <button class="btn-action" onclick="abrirModalFeedback()">💡 Enviar Documentação</button>
+        <button class="btn-action" onclick="abrirModalFeedback()">➕ Enviar Documentação</button>
       </div>
     </div>
     <form class="searchRow" onsubmit="event.preventDefault(); return false;">
@@ -312,15 +306,19 @@
     <div class="modal-body">
       <label for="fbAutor">Seu Nome:</label>
       <input type="text" id="fbAutor" placeholder="Ex: João Silva" />
+
       <label for="fbTipo">Tipo:</label>
       <select id="fbTipo">
         <option value="Nova Documentação">Nova Documentação</option>
         <option value="Correção de Documentação Existente">Correção de Documentação Existente</option>
       </select>
+
       <label for="fbDoc">Assunto</label>
       <input type="text" id="fbDoc" placeholder="Ex: Portal MeuRH" />
+      
       <label for="fbTicket">Ticket de referência</label>
       <input type="text" id="fbTicket" placeholder="Ex: #12345678" />
+
       <label for="fbEditor">Detalhamento e número de ticket para referência</label>
       <textarea id="fbEditor" placeholder="Apenas texto..."></textarea>
     </div>
@@ -374,8 +372,8 @@
       "SUPORTE", "RM", "PORTAIS", "INTEGRAÇÕES", "BANCO DE DADOS",
       "RÉPLICA", "ATUALIZAÇÃO", "CUSTOMIZAÇÃO", "EXECUÇÃO DE SCRIPTS", "DISPONIBILIZAÇÃO DE BACKUP",
       "FTP", "GO GLOBAL", "TOTVS AUDIT", "LICENSE SERVER", "IMPORTAÇÃO DE ARQUIVO", "LIBERAÇÃO DE ACESSO EXTERNO",
-      "PVI", "SFA", "FLUIG", "T-CLOUD", "SMART VIEW", "FAST ANALYTICS", "FISCAL SYNC",
-      "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "DEVOPS"
+      "PVI", "FLUIG", "T-CLOUD", "SMART VIEW", "FAST ANALYTICS", "FISCAL SYNC",
+      "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "TDNs", "OUTROS ATENDIMENTOS"
     ];
 
     const STOP_WORDS = new Set([
@@ -407,6 +405,11 @@
         .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
     }
 
+    function getStem(word) {
+      if (!word || word.length < 4) return word;
+      return word.substring(0, Math.min(5, word.length));
+    }
+
     const searchDocs = DOCS.map(d => {
       const textWithoutUrls = removeUrlsFromText(d.text);
       const titleKws = getKeywords(d.title);
@@ -417,7 +420,7 @@
         cleanText: cleanText(textWithoutUrls),
         rawTextClean: cleanText(d.text),
         cleanPath: cleanText(d.path || d.title),
-        // Chave Mestra para OCR: Array de palavras limpas e livres de conectivos
+        titleKeywords: titleKws,
         textKeywords: getKeywords(textWithoutUrls)
       };
     });
@@ -445,7 +448,6 @@
       if (!rawQuery) return 0;
       let score = 0;
 
-      // 1. VIA VERDE EXATA (Para T-Cloud, Go-Global, ou títulos exatos)
       const exactSearch = rawQuery.toLowerCase().trim();
       const docTitleRaw = (d.title || "").toLowerCase();
       const docTextRaw = (d.text || "").toLowerCase();
@@ -462,7 +464,7 @@
       if (queryWords.length === 0) return score; 
 
       const titleClean = d.cleanTitleNoStopwords;
-      const docTextKeywordsStr = d.textKeywords.join(' '); // Texto do Documento 100% sem stopwords
+      const docTextKeywordsStr = d.textKeywords.join(' '); 
 
       let titleMatchedWords = 0;
       for (const word of queryWords) {
@@ -483,8 +485,6 @@
         }
       }
 
-      // 2. O NOVO ALGORITMO INFALÍVEL PARA OCR (EducaMobile)
-      // A pesquisa de frase longa ignora stopwords do texto original, permitindo "unir" as palavras vitais
       let longestSeq = 0;
       for(let len = Math.min(queryWords.length, 15); len >= 2; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
@@ -544,7 +544,6 @@
     function formatSnippetText(snippetHtml) {
       if (!snippetHtml) return '';
 
-      // Engole os espaços em branco (enters) antes e depois das imagens para colar o texto a elas
       let formatted = snippetHtml.replace(
         /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
         `<div class="img-container">
@@ -615,6 +614,10 @@
           const cSlice = cleanText(slice); 
           for (const w of queryWords) {
             if (cSlice.includes(w)) count++;
+            else {
+              const st = getStem(w);
+              if (st.length >= 4 && cSlice.includes(st)) count += 0.5;
+            }
           }
           if (count > bestCount) {
             bestCount = count;
@@ -637,7 +640,6 @@
         return formatSnippetText(text.substring(0, 650) + (text.length > 650 ? '...' : ''));
       }
 
-      // SNIPPET CONFIGURADO: 70 letras antes e limite longo de 2000 após a correspondência
       const start = Math.max(0, matchIndex - 70);
       const end = Math.min(text.length, matchIndex + 2000);
       let snippet = (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
@@ -811,14 +813,15 @@
         parent.replaceChild(textNode, mark);
         parent.normalize(); 
       });
+      render();
     });
 
     let debounceTimer;
     q.addEventListener('input', () => {
       clearTimeout(debounceTimer);
-      // Aguarda 600 milissegundos (0.6 segundos) após você parar de digitar para rodar a busca
       debounceTimer = setTimeout(render, 600); 
     });
+
     count.textContent = `${DOCS.length} documentações carregadas.`;
     render();
   }
