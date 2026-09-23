@@ -89,11 +89,16 @@
       .grid { grid-template-columns: 1fr 1fr; }
     }
 
-    /* Modificado para garantir exatamente 4 colunas em telas grandes */
+    /* Grid do Dashboard Inicial: Forçado para 4 colunas em monitores */
     .grid-thumbnails {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-      gap: 18px;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    @media (min-width: 1200px) {
+      .grid-thumbnails {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
     
     .card { 
@@ -109,15 +114,16 @@
     }
     .card:hover { border-color: rgba(90, 167, 255, 0.4); }
 
+    /* Card Miniatura Reduzida */
     .card-thumb {
       background: var(--card);
       border: 1px solid var(--border);
       border-radius: 12px;
-      padding: 20px;
+      padding: 16px; /* Padding reduzido para deixá-lo mais slim */
       text-decoration: none;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 4px;
       transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
       position: relative;
       cursor: pointer;
@@ -144,28 +150,44 @@
     }
     .thumb-title {
       color: var(--text);
-      font-size: 16px;
+      font-size: 15px; /* Fonte levemente menor para acompanhar o card slim */
       font-weight: 600;
-      line-height: 1.4;
+      line-height: 1.3;
       transition: color 0.2s;
     }
     .card-thumb:hover .thumb-title { color: var(--accent); }
 
+    /* Lógica do Hover com 0.4s de Delay */
     .thumb-sub-list {
-      display: none;
+      display: flex;
       flex-direction: column;
       gap: 6px;
-      margin-top: 12px;
-      padding-top: 12px;
-      border-top: 1px dashed rgba(90, 167, 255, 0.2);
       width: 100%;
-      animation: fadeIn 0.3s ease forwards;
+      
+      /* Estado Oculto */
+      max-height: 0;
+      opacity: 0;
+      overflow: hidden;
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 1px dashed transparent;
+      
+      /* Quando tira o mouse: transição rápida, sem delay */
+      transition: max-height 0.2s ease 0s, opacity 0.2s ease 0s, margin-top 0.2s ease 0s, padding-top 0.2s ease 0s, border-color 0.2s ease 0s;
     }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(-5px); }
-      to { opacity: 1; transform: translateY(0); }
+
+    .card-thumb:hover .thumb-sub-list {
+      /* Estado Expandido */
+      max-height: 800px;
+      opacity: 1;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-color: rgba(90, 167, 255, 0.2);
+      
+      /* Quando coloca o mouse: espera 0.4s antes de agir */
+      transition: max-height 0.4s ease 0.4s, opacity 0.4s ease 0.4s, margin-top 0.2s ease 0.4s, padding-top 0.2s ease 0.4s, border-color 0.2s ease 0.4s;
     }
-    .card-thumb:hover .thumb-sub-list { display: flex; }
+
     .sub-item {
       font-size: 12.5px;
       color: #c0cdf0;
@@ -615,10 +637,6 @@
           const cSlice = cleanText(slice); 
           for (const w of queryWords) {
             if (cSlice.includes(w)) count++;
-            else {
-              const st = getStem(w);
-              if (st.length >= 4 && cSlice.includes(st)) count += 0.5;
-            }
           }
           if (count > bestCount) {
             bestCount = count;
@@ -800,6 +818,7 @@
       }
     });
 
+    // Comportamento do X EXATAMENTE com a limpeza pura, sem render()
     btnClearSearch.addEventListener('click', function(e) {
       e.preventDefault();
       e.stopPropagation();
@@ -814,7 +833,6 @@
         parent.replaceChild(textNode, mark);
         parent.normalize(); 
       });
-      render();
     });
 
     let debounceTimer;
