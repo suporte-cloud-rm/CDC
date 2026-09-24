@@ -207,7 +207,7 @@
     .snippet { 
       color: #c0cdf0; 
       font-size: 14.5px; 
-      line-height: 1.5; 
+      line-height: 1.4; 
       margin-top: 10px; 
       white-space: pre-wrap;
       word-break: break-word;
@@ -223,11 +223,12 @@
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
-    /* IMAGENS - Forçado a linha exclusiva para padronizar o balão */
+    /* IMAGENS: Margens reduzidas ao minimo e forcando quebra de linha limpa */
     .snippet .img-container {
       display: block; 
       width: 100%;
-      margin: 8px 0; 
+      margin: 4px 0; 
+      padding: 0;
       clear: both;
     }
 
@@ -319,15 +320,19 @@
     <div class="modal-body">
       <label for="fbAutor">Seu Nome:</label>
       <input type="text" id="fbAutor" placeholder="Ex: João Silva" />
+
       <label for="fbTipo">Tipo:</label>
       <select id="fbTipo">
         <option value="Nova Documentação">Nova Documentação</option>
         <option value="Correção de Documentação Existente">Correção de Documentação Existente</option>
       </select>
+
       <label for="fbDoc">Assunto</label>
       <input type="text" id="fbDoc" placeholder="Ex: Portal MeuRH" />
+      
       <label for="fbTicket">Ticket de referência</label>
       <input type="text" id="fbTicket" placeholder="Ex: #12345678" />
+
       <label for="fbEditor">Detalhamento e número de ticket para referência</label>
       <textarea id="fbEditor" placeholder="Apenas texto..."></textarea>
     </div>
@@ -553,17 +558,10 @@
     function formatSnippetText(snippetHtml) {
       if (!snippetHtml) return '';
 
-      // Adiciona quebra de linha em volta do bloco garantindo que o texto flua normalmente antes/depois
+      // Engole os espaços/quebras nativas do pre-wrap para injetar o bloco de imagem perfeitamente limpo
       let formatted = snippetHtml.replace(
         /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
-        `\n<div class="img-container">
-          <img src="$1" 
-               alt="Imagem da Documentação" 
-               onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" 
-               onclick="ampliarImagem('$1')" 
-               title="Clique para ampliar" />
-          <div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div>
-         </div>\n`
+        `<div class="img-container"><img src="$1" alt="Imagem da Documentação" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('$1')" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>`
       );
 
       formatted = formatted.replace(
@@ -659,7 +657,7 @@
       btnClearSearch.style.display = rawQuery ? 'flex' : 'none';
 
       if (!rawQuery) {
-        let inicialDocs = [];
+        let htmlMenu = '';
         
         MENU_PRINCIPAL.forEach(titulo => {
            const searchTitle = cleanText(titulo);
@@ -688,22 +686,18 @@
                        + `</div>`;
                }
 
-               htmlMenu = `
+               htmlMenu += `
                  <div class="card-thumb" onclick="if(event.target.tagName !== 'A') window.open('${parentDoc.url || '#'}', '_blank')" title="${parentDoc.title}">
                    <div class="thumb-path">${getParentPathOnly(parentDoc)}</div>
                    <div class="thumb-title">${titulo}</div>
                    ${filhosHtml}
                  </div>
                `;
-               
-               if (!inicialDocs.some(doc => doc.id === parentDoc.id)) {
-                   inicialDocs.push({ id: parentDoc.id, html: htmlMenu });
-               }
            }
         });
 
         gridWrapper.className = 'grid-thumbnails';
-        gridWrapper.innerHTML = inicialDocs.map(d => d.html).join('');
+        gridWrapper.innerHTML = htmlMenu;
         count.textContent = `Páginas principais em atalho.`;
         return; 
       }
@@ -819,6 +813,7 @@
         parent.replaceChild(textNode, mark);
         parent.normalize(); 
       });
+      render();
     });
 
     let debounceTimer;
