@@ -205,28 +205,61 @@
     .card h3 a:hover { opacity: 0.85; }
     
     .snippet { 
-      color: #c0cdf0; 
-      font-size: 14.5px; 
-      line-height: 1.4; 
+      position: relative;
+      color: #d0d9f5;
+      font-size: 15px;
+      line-height: 1.6;
       margin-top: 10px; 
       white-space: pre-wrap;
       word-break: break-word;
       max-height: 800px;
       overflow-y: auto;
       background: rgba(4, 8, 16, 0.55); 
-      padding: 16px 20px;
+      padding: 18px 22px;
       border-radius: 10px;
       border: 1px solid rgba(90, 167, 255, 0.25);
       box-shadow: inset 0 0 12px rgba(0, 0, 0, 0.4);
       flex-grow: 1;
+      scroll-behavior: smooth;
     }
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
+    /* NOVO: Apenas a palavra "ERRO:" fica como uma etiqueta (badge) */
+    .doc-error-badge {
+      display: inline-block;
+      background: rgba(255, 82, 82, 0.15);
+      color: #ff8a8a;
+      border-left: 3px solid var(--danger);
+      border-radius: 0 4px 4px 0;
+      padding: 2px 8px;
+      margin-top: 4px; 
+      margin-bottom: 8px;
+      margin-right: 6px;
+      font-weight: 700;
+      font-size: 13.5px;
+    }
+
+    /* O restante do titulo fica em texto claro normal, porem em negrito */
+    .doc-error-desc {
+      font-weight: 600;
+      color: #ffffff;
+      font-size: 15px;
+    }
+    
+    /* Linha divisória em tom de vermelho suave mantida */
+    .doc-divider {
+      width: 100%;
+      height: 1px;
+      background: linear-gradient(to right, rgba(255, 82, 82, 0.02), rgba(255, 82, 82, 0.3), rgba(255, 82, 82, 0.02));
+      margin: 28px 0 12px 0; 
+      clear: both;
+    }
+
     .snippet .img-container {
       display: block; 
       width: 100%;
-      margin: 4px 0; 
+      margin: 12px 0;
       padding: 0;
       clear: both;
     }
@@ -255,11 +288,22 @@
     .img-modal-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(6px); display: none; align-items: center; justify-content: center; z-index: 300; cursor: pointer; }
     .img-modal-content { max-width: 90vw; max-height: 90vh; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); border: 1px solid var(--border); }
 
-    .snippet::-webkit-scrollbar { width: 6px; }
-    .snippet::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
-    .snippet::-webkit-scrollbar-thumb { background: rgba(90, 167, 255, 0.3); border-radius: 4px; }
+    .snippet::-webkit-scrollbar { width: 8px; }
+    .snippet::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); border-radius: 4px; }
+    .snippet::-webkit-scrollbar-thumb { background: rgba(90, 167, 255, 0.4); border-radius: 4px; }
+    .snippet::-webkit-scrollbar-thumb:hover { background: rgba(90, 167, 255, 0.6); }
 
-    mark { background: rgba(90, 167, 255, 0.25); color: #5aa7ff; font-weight: 700; padding: 1px 3px; border-radius: 3px; border: 1px solid rgba(90, 167, 255, 0.4); box-shadow: none; display: inline-block; line-height: 1.1; }
+    mark { 
+      background: rgba(90, 167, 255, 0.35); 
+      color: #fff; 
+      font-weight: 700; 
+      padding: 1px 4px; 
+      border-radius: 4px; 
+      border: 1px solid rgba(90, 167, 255, 0.6); 
+      box-shadow: 0 0 8px rgba(90, 167, 255, 0.2); 
+      display: inline-block; 
+      line-height: 1.1; 
+    }
 
     .count { color: var(--muted); font-size: 13px; margin-top: 10px; }
     .ocr-status { color: var(--breadcrumb-green); font-size: 13px; margin-top: 6px; font-weight: 500; display: none; }
@@ -386,7 +430,7 @@
       "RÉPLICA", "ATUALIZAÇÃO", "CUSTOMIZAÇÃO", "EXECUÇÃO DE SCRIPTS", "DISPONIBILIZAÇÃO DE BACKUP",
       "FTP", "GO GLOBAL", "TOTVS AUDIT", "LICENSE SERVER", "IMPORTAÇÃO DE ARQUIVO", "LIBERAÇÃO DE ACESSO EXTERNO",
       "PVI", "FLUIG", "T-CLOUD", "SMART VIEW", "FAST ANALYTICS", "FISCAL SYNC",
-      "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "TDNs", "OUTROS ATENDIMENTOS"
+      "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "INFO", "OUTROS ATENDIMENTOS"
     ];
 
     const STOP_WORDS = new Set([
@@ -556,19 +600,24 @@
 
     function formatSnippetText(snippetHtml) {
       if (!snippetHtml) return '';
-
-      let formatted = snippetHtml.replace(
-        /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
-        `<div class="img-container"><img src="$1" alt="Imagem da Documentação" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('$1')" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>`
-      );
+      let formatted = snippetHtml;
 
       formatted = formatted.replace(
         /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g,
         '<a href="$2" target="_blank" rel="noopener">$1</a>'
       );
-
       const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<)]+)/g;
-      return formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+      // DIVISÓRIA E ETIQUETA: Transforma apenas a palavra "ERRO:" num badge e mantem o restante na linha
+      formatted = formatted.replace(/(^|\n)([ \t]*)(ERRO:)([^\n]+)/gi, '$1<div class="doc-divider"></div>$2<span class="doc-error-badge">$3</span><span class="doc-error-desc">$4</span>');
+
+      formatted = formatted.replace(
+        /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
+        `\n<div class="img-container"><img src="$1" alt="Imagem da Documentação" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('$1')" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>\n`
+      );
+
+      return formatted;
     }
 
     function highlightSnippetHtml(htmlContent, rawQuery) {
@@ -576,19 +625,31 @@
 
       const cleanQ = cleanText(rawQuery);
       const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
-      const wordsToHighlight = [cleanQ];
       
-      if (rawQuery.trim().length >= 3) wordsToHighlight.push(rawQuery.trim());
-      if (queryWords.length > 1) wordsToHighlight.push(...queryWords);
+      let highlightList = [];
+      const rawTrimmed = rawQuery.trim();
+      
+      if (rawTrimmed.length >= 3) {
+        highlightList.push({ word: rawTrimmed, primary: true });
+      }
+      if (cleanQ.length >= 3 && cleanQ !== rawTrimmed) {
+        highlightList.push({ word: cleanQ, primary: true });
+      }
+      queryWords.forEach(w => {
+        if (w.length >= 2) highlightList.push({ word: w, primary: false });
+      });
+
+      highlightList = highlightList.filter((v, i, a) => a.findIndex(t => (t.word === v.word)) === i);
+      highlightList.sort((a, b) => b.word.length - a.word.length);
 
       let highlighted = htmlContent;
-      for (const word of wordsToHighlight) {
-        if (word.length < 2) continue;
+      for (const item of highlightList) {
         try {
-          const regHighlight = buildAccentRegex(word);
+          const regHighlight = buildAccentRegex(item.word);
+          const openTag = item.primary ? '<mark class="primary-match">' : '<mark>';
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
             if (tag) return tag;
-            return text.replace(regHighlight, '<mark>$&</mark>');
+            return text.replace(regHighlight, `${openTag}$&</mark>`);
           });
         } catch (e) {}
       }
@@ -598,55 +659,9 @@
 
     function getSnippet(text, rawQuery) {
       if (!text) return '';
-      if (!rawQuery) return formatSnippetText(text.substring(0, 650) + (text.length > 650 ? '...' : ''));
+      if (!rawQuery) return formatSnippetText(text);
 
-      const cleanQ = cleanText(rawQuery);
-      const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
-
-      let matchIndex = -1;
-
-      if (queryWords.length >= 2) {
-        let bestCount = 0;
-        const windowSize = 350; 
-        const maxI = Math.max(0, text.length - windowSize);
-        
-        for (let i = 0; i <= maxI; i += 40) {
-          const slice = text.substring(i, i + windowSize);
-          
-          const isUrl = /^https?:\/\//i.test(slice.trim());
-          if (isUrl) continue;
-
-          let count = 0;
-          const cSlice = cleanText(slice); 
-          for (const w of queryWords) {
-            if (cSlice.includes(w)) count++;
-          }
-          if (count > bestCount) {
-            bestCount = count;
-            matchIndex = i;
-          }
-        }
-      }
-
-      if (matchIndex === -1 && queryWords.length > 0) {
-        for (const word of queryWords) {
-          const idx = text.toLowerCase().indexOf(word);
-          if (idx !== -1) {
-            matchIndex = idx;
-            break;
-          }
-        }
-      }
-
-      if (matchIndex === -1) {
-        return formatSnippetText(text.substring(0, 650) + (text.length > 650 ? '...' : ''));
-      }
-
-      const start = Math.max(0, matchIndex - 70);
-      const end = Math.min(text.length, matchIndex + 2000);
-      let snippet = (start > 0 ? '...' : '') + text.substring(start, end) + (end < text.length ? '...' : '');
-
-      const formattedHtml = formatSnippetText(snippet);
+      const formattedHtml = formatSnippetText(text);
       return highlightSnippetHtml(formattedHtml, rawQuery);
     }
 
@@ -740,6 +755,18 @@
       }).join('');
 
       count.textContent = `${results.length} resultado(s) encontrado(s)`;
+
+      setTimeout(() => {
+        const snippets = document.querySelectorAll('.snippet');
+        snippets.forEach(box => {
+          const mark = box.querySelector('mark.primary-match') || box.querySelector('mark');
+          if (mark) {
+            const boxRect = box.getBoundingClientRect();
+            const markRect = mark.getBoundingClientRect();
+            box.scrollTop += (markRect.top - boxRect.top) - 60; 
+          }
+        });
+      }, 350); 
     }
 
     async function processarImagemOCR(imageSource) {
