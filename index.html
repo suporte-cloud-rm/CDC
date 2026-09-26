@@ -225,7 +225,6 @@
 
     .snippet a { color: var(--accent); text-decoration: underline; }
 
-    /* CORREÇÃO: Etiqueta trava a largura ao conteúdo exato */
     .doc-error-badge {
       display: inline-block;
       width: fit-content;
@@ -239,9 +238,10 @@
       font-weight: 700;
       font-size: 13.5px;
       vertical-align: middle;
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
     }
 
-    /* O restante do titulo fica em texto claro normal, porem em negrito */
     .doc-error-desc {
       font-weight: 600;
       color: #ffffff;
@@ -249,7 +249,6 @@
       display: inline;
     }
     
-    /* Linha divisória em tom de vermelho suave mantida */
     .doc-divider {
       width: 100%;
       height: 1px;
@@ -283,7 +282,21 @@
 
     .snippet img:hover { transform: scale(1.02); border-color: var(--accent); }
 
-    .img-fallback-msg { display: none; font-size: 12px; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px dashed rgba(255, 193, 7, 0.4); padding: 6px 10px; border-radius: 6px; }
+    .img-fallback-msg { 
+      display: none; 
+      font-size: 12px; 
+      color: #ffc107; 
+      background: rgba(255, 193, 7, 0.1); 
+      border: 1px dashed rgba(255, 193, 7, 0.4); 
+      padding: 8px 12px; 
+      border-radius: 6px; 
+      margin-top: 4px;
+    }
+    .img-fallback-msg a:hover {
+      text-decoration: underline !important;
+      color: #fff !important;
+    }
+    
     .img-container.img-failed img { display: none; }
     .img-container.img-failed .img-fallback-msg { display: block; }
 
@@ -295,7 +308,6 @@
     .snippet::-webkit-scrollbar-thumb { background: rgba(90, 167, 255, 0.4); border-radius: 4px; }
     .snippet::-webkit-scrollbar-thumb:hover { background: rgba(90, 167, 255, 0.6); }
 
-    /* CORREÇÃO: Marcação alterada para inline normal para nunca distorcer blocos */
     mark { 
       background: rgba(90, 167, 255, 0.35); 
       color: #fff; 
@@ -305,6 +317,8 @@
       border: 1px solid rgba(90, 167, 255, 0.6); 
       box-shadow: 0 0 8px rgba(90, 167, 255, 0.2); 
       display: inline; 
+      -webkit-box-decoration-break: clone;
+      box-decoration-break: clone;
     }
 
     .count { color: var(--muted); font-size: 13px; margin-top: 10px; }
@@ -532,18 +546,10 @@
 
       const ratioTitle = titleMatchedWords / queryWords.length;
       if (ratioTitle >= 0.3) {
-        score += Math.pow(titleMatchedWords, 4) * 5000000;
+        score += Math.pow(titleMatchedWords, 4) * 500000;
       }
 
-      if (queryWords.length >= 2) {
-        for (let i = 0; i <= queryWords.length - 2; i++) {
-          const pair = queryWords.slice(i, i + 2).join(' ');
-          if (titleClean.includes(pair)) {
-            score += 100000000;
-          }
-        }
-      }
-
+      // Sequencias longas da exata frase
       let longestSeq = 0;
       for(let len = Math.min(queryWords.length, 15); len >= 2; len--) {
           for(let i = 0; i <= queryWords.length - len; i++) {
@@ -556,35 +562,36 @@
       }
       
       if (longestSeq >= 4) {
-          score += Math.pow(longestSeq, 5) * 5000000; 
+          score += Math.pow(longestSeq, 6) * 5000000; 
       } else if (longestSeq === 3) {
-          score += 500000;
+          score += 2000000;
       } else if (longestSeq === 2) {
-          score += 50000;
+          score += 100000;
       }
 
-      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
-        score += 10000;
-      }
-      
+      // NOVO SISTEMA DE DENSIDADE (O Esmagador de Palavras Soltas)
+      // Substitui o método "includes()" cego por uma analise rigorosa de blocos de arrays (janelas de palavras)
       let maxWordsInWindow = 0;
-      const windowSize = 250;
-
-      for (let i = 0; i < d.cleanText.length; i += 80) {
-        const textSlice = d.cleanText.substring(i, i + windowSize);
-        let countExact = 0;
-
-        for (const word of queryWords) {
-          if (textSlice.includes(word)) countExact++;
-        }
-
-        if (countExact > maxWordsInWindow) {
-          maxWordsInWindow = countExact;
-        }
+      const windowSizeWords = 20; 
+      const docWords = d.textKeywords; // docWords é o array puro de palavras filtradas
+      
+      if (docWords.length > 0 && queryWords.length > 0) {
+          for (let i = 0; i < docWords.length; i += 3) { 
+              let chunk = docWords.slice(i, i + windowSizeWords);
+              let countExact = 0;
+              for (const qw of queryWords) {
+                  // A verificacao array.includes() garante que partes de palavras (ex: web em azurewebsites) não pontuem!
+                  if (chunk.includes(qw)) countExact++;
+              }
+              if (countExact > maxWordsInWindow) {
+                  maxWordsInWindow = countExact;
+              }
+          }
       }
 
       if (maxWordsInWindow >= 2) {
-        score += Math.pow(maxWordsInWindow, 3) * 500;
+          // Punição Severa de Espalhamento: Eleva a pontuacao do bloco à 6ª potencia para dar milhões de pontos a textos densos
+          score += Math.pow(maxWordsInWindow, 6) * 15000; 
       }
 
       return score;
@@ -597,7 +604,7 @@
       };
       const escaped = escapeRegExp(term.toLowerCase());
       const pattern = escaped.split('').map(c => charMap[c] || c).join('');
-      return new RegExp(pattern.replace(/ /g, '[\\s\\-]+'), 'gi');
+      return new RegExp(pattern.replace(/ /g, '[ \\t\\-]+'), 'gi');
     }
 
     function formatSnippetText(snippetHtml) {
@@ -611,12 +618,17 @@
       const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<)]+)/g;
       formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
-      // CORREÇÃO: O regex [^\r\n]* garante que quebras de linha invisíveis nunca sejam engolidas e causem estiramento
       formatted = formatted.replace(/(^|\n)([ \t]*)(ERRO:)([^\r\n]*)/gi, '$1<div class="doc-divider"></div>$2<span class="doc-error-badge">$3</span><span class="doc-error-desc">$4</span>');
 
       formatted = formatted.replace(
-        /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
-        `\n<div class="img-container"><img src="$1" alt="Imagem da Documentação" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('$1')" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>\n`
+        /\s*!\[([^\]]*)\]\(([^)]+)\)\s*/g,
+        (match, alt, url) => {
+          let cleanUrl = url.trim().replace(/\\/g, '/');
+          let filename = cleanUrl.split('/').pop() || 'imagem';
+          if (filename.length > 35) filename = filename.substring(0, 35) + '...';
+          
+          return `\n<div class="img-container"><img src="${cleanUrl}" alt="${alt || 'Imagem da Documentação'}" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('${cleanUrl}')" title="Clique para ampliar" /><div class="img-fallback-msg"><a href="${cleanUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;" title="Pode tentar carregar no link num separador novo">⚠️ Ficheiro indisponível no servidor (${filename})</a></div></div>\n`;
+        }
       );
 
       return formatted;
@@ -647,6 +659,7 @@
       let highlighted = htmlContent;
       for (const item of highlightList) {
         try {
+          // Garante que o replace so aplique a marcacao para a palavra exata usando limitadores de borda (\b nao funciona com acentos entao usamos o regex seguro ja testado)
           const regHighlight = buildAccentRegex(item.word);
           const openTag = item.primary ? '<mark class="primary-match">' : '<mark>';
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
@@ -736,7 +749,7 @@
       const cleanSearchQuery = queryWords.join(' ');
 
       let fuseMatches = [];
-      if (directMatches.length === 0 || directMatches[0]._score < 1000000) {
+      if (directMatches.length === 0 || directMatches[0]._score < 100000) {
         fuseMatches = fuse.search(cleanSearchQuery || rawQuery)
           .map(r => r.item)
           .filter(d => !directMatches.some(dm => dm.id === d.id));
