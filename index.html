@@ -449,10 +449,11 @@
       "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "INFO", "OUTROS ATENDIMENTOS"
     ];
 
+    // ATUALIZAÇÃO 1: Palavras em inglês fundamentais para TI removidas da lista de "ignorados".
+    // Agora o sistema rastreará perfeitamente "not", "is", "be", etc.
     const STOP_WORDS = new Set([
       "de", "da", "do", "das", "dos", "ao", "aos", "em", "no", "na", "nos", "nas", 
-      "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "nao", "foi", 
-      "que", "ha", "este", "esta", "and", "or", "to", "in", "for", "with", "of"
+      "por", "para", "com", "um", "uma", "o", "a", "os", "as"
     ]);
 
     function cleanText(s) {
@@ -478,11 +479,6 @@
         .filter(w => w.length >= 2 && !STOP_WORDS.has(w));
     }
 
-    function getStem(word) {
-      if (!word || word.length < 4) return word;
-      return word.substring(0, Math.min(5, word.length));
-    }
-
     const searchDocs = DOCS.map(d => {
       const textWithoutUrls = removeUrlsFromText(d.text);
       const titleKws = getKeywords(d.title);
@@ -490,7 +486,7 @@
         ...d,
         cleanTitle: cleanText(d.title),
         cleanTitleNoStopwords: titleKws.join(' '),
-        cleanText: cleanText(textWithoutUrls),
+        cleanText: cleanText(textWithoutUrls), // Usado para a nova janela matemática de densidade
         rawTextClean: cleanText(d.text),
         cleanPath: cleanText(d.path || d.title),
         titleKeywords: titleKws,
@@ -529,15 +525,19 @@
       if (exactSearch.length >= 3) {
           if (docTitleRaw === exactSearch || docTitleRaw === exactNoHyphen) score += 2000000000;
           else if (docTitleRaw.includes(exactSearch) || docTitleRaw.includes(exactNoHyphen)) score += 100000000;
-          if (docTextRaw.includes(exactSearch) || docTextRaw.includes(exactNoHyphen)) score += 50000000;
       }
 
       const cleanQ = cleanText(rawQuery);
+      
+      // BÓNUS DE FRASE EXATA
+      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
+          score += 1000000000;
+      }
+
       const queryWords = getKeywords(rawQuery);
       if (queryWords.length === 0) return score; 
 
       const titleClean = d.cleanTitleNoStopwords;
-      const docTextKeywordsStr = d.textKeywords.join(' '); 
 
       let titleMatchedWords = 0;
       for (const word of queryWords) {
@@ -549,49 +549,35 @@
         score += Math.pow(titleMatchedWords, 4) * 500000;
       }
 
-      // Sequencias longas da exata frase
-      let longestSeq = 0;
-      for(let len = Math.min(queryWords.length, 15); len >= 2; len--) {
-          for(let i = 0; i <= queryWords.length - len; i++) {
-              const phrase = queryWords.slice(i, i+len).join(' ');
-              if (docTextKeywordsStr.includes(phrase)) {
-                  if (len > longestSeq) longestSeq = len;
-              }
-          }
-          if (longestSeq > 0) break; 
-      }
+      // ATUALIZAÇÃO 2: A MÁQUINA DE DENSIDADE (Janela de 150 caracteres)
+      // Resolve o problema de palavras separadas VS frase completa
+      let maxDensity = 0;
+      const windowChars = 150; 
       
-      if (longestSeq >= 4) {
-          score += Math.pow(longestSeq, 6) * 5000000; 
-      } else if (longestSeq === 3) {
-          score += 2000000;
-      } else if (longestSeq === 2) {
-          score += 100000;
-      }
-
-      // NOVO SISTEMA DE DENSIDADE (O Esmagador de Palavras Soltas)
-      // Substitui o método "includes()" cego por uma analise rigorosa de blocos de arrays (janelas de palavras)
-      let maxWordsInWindow = 0;
-      const windowSizeWords = 20; 
-      const docWords = d.textKeywords; // docWords é o array puro de palavras filtradas
-      
-      if (docWords.length > 0 && queryWords.length > 0) {
-          for (let i = 0; i < docWords.length; i += 3) { 
-              let chunk = docWords.slice(i, i + windowSizeWords);
-              let countExact = 0;
+      if (d.cleanText && queryWords.length > 0) {
+          for (let i = 0; i < d.cleanText.length; i += 40) { 
+              // Envolve a janela em espaços para forçar leitura de palavras inteiras
+              let textSlice = " " + d.cleanText.substring(i, i + windowChars) + " ";
+              let foundCount = 0;
+              
               for (const qw of queryWords) {
-                  // A verificacao array.includes() garante que partes de palavras (ex: web em azurewebsites) não pontuem!
-                  if (chunk.includes(qw)) countExact++;
+                  // Confirma se a palavra existe inteira e não como pedaço de outra palavra
+                  if (textSlice.includes(" " + qw + " ")) {
+                      foundCount++;
+                  } else if (qw.length >= 5 && textSlice.includes(qw)) {
+                      foundCount++;
+                  }
               }
-              if (countExact > maxWordsInWindow) {
-                  maxWordsInWindow = countExact;
+              if (foundCount > maxDensity) {
+                  maxDensity = foundCount;
               }
           }
       }
 
-      if (maxWordsInWindow >= 2) {
-          // Punição Severa de Espalhamento: Eleva a pontuacao do bloco à 6ª potencia para dar milhões de pontos a textos densos
-          score += Math.pow(maxWordsInWindow, 6) * 15000; 
+      if (maxDensity >= 2) {
+          // Exponencial extremo: 5 palavras juntas = 5^8 = ~39 Bilhões de pontos
+          // Literalmente esmaga documentos com dezenas de "palavras soltas"
+          score += Math.pow(maxDensity, 8) * 100000; 
       }
 
       return score;
@@ -620,14 +606,23 @@
 
       formatted = formatted.replace(/(^|\n)([ \t]*)(ERRO:)([^\r\n]*)/gi, '$1<div class="doc-divider"></div>$2<span class="doc-error-badge">$3</span><span class="doc-error-desc">$4</span>');
 
+      // ATUALIZAÇÃO 3: URL Local Segura.
+      // Se abrir localmente (file://) ele forçará o apontamento relativo de segurança para `./assets/`
       formatted = formatted.replace(
         /\s*!\[([^\]]*)\]\(([^)]+)\)\s*/g,
         (match, alt, url) => {
           let cleanUrl = url.trim().replace(/\\/g, '/');
+          
+          if (!cleanUrl.startsWith('http')) {
+              if (cleanUrl.startsWith('/')) cleanUrl = cleanUrl.substring(1);
+              if (cleanUrl.startsWith('./')) cleanUrl = cleanUrl.substring(2);
+              cleanUrl = './' + cleanUrl; 
+          }
+          
           let filename = cleanUrl.split('/').pop() || 'imagem';
           if (filename.length > 35) filename = filename.substring(0, 35) + '...';
           
-          return `\n<div class="img-container"><img src="${cleanUrl}" alt="${alt || 'Imagem da Documentação'}" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('${cleanUrl}')" title="Clique para ampliar" /><div class="img-fallback-msg"><a href="${cleanUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;" title="Pode tentar carregar no link num separador novo">⚠️ Ficheiro indisponível no servidor (${filename})</a></div></div>\n`;
+          return `\n<div class="img-container"><img src="${cleanUrl}" alt="${alt || 'Imagem da Documentação'}" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('${cleanUrl}')" title="Clique para ampliar" /><div class="img-fallback-msg"><a href="${cleanUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;" title="O seu ficheiro index.html físico não encontrou esta imagem na pasta assets. Garanta que fez git pull.">⚠️ Ficheiro indisponível fisicamente (${filename})</a></div></div>\n`;
         }
       );
 
@@ -659,12 +654,20 @@
       let highlighted = htmlContent;
       for (const item of highlightList) {
         try {
-          // Garante que o replace so aplique a marcacao para a palavra exata usando limitadores de borda (\b nao funciona com acentos entao usamos o regex seguro ja testado)
-          const regHighlight = buildAccentRegex(item.word);
+          const charMap = {
+            'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]',
+            'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]'
+          };
+          const escaped = escapeRegExp(item.word.toLowerCase());
+          const pattern = escaped.split('').map(c => charMap[c] || c).join('');
+          
+          // Impede realce dentro de palavras maiores ou links (Word Boundary Rigoroso)
+          const regHighlight = new RegExp(`(^|[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ])(${pattern.replace(/ /g, '[ \\t\\-]+')})(?=[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ]|$)`, 'gi');
+          
           const openTag = item.primary ? '<mark class="primary-match">' : '<mark>';
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
             if (tag) return tag;
-            return text.replace(regHighlight, `${openTag}$&</mark>`);
+            return text.replace(regHighlight, `$1${openTag}$2</mark>`);
           });
         } catch (e) {}
       }
