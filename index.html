@@ -227,26 +227,22 @@
 
     .doc-error-badge {
       display: inline-block;
-      width: fit-content;
-      max-width: 100%;
       background: rgba(255, 82, 82, 0.15);
       color: #ff8a8a;
       border-left: 3px solid var(--danger);
       border-radius: 0 4px 4px 0;
       padding: 2px 8px;
+      margin-top: 4px; 
+      margin-bottom: 8px;
       margin-right: 6px;
       font-weight: 700;
       font-size: 13.5px;
-      vertical-align: middle;
-      -webkit-box-decoration-break: clone;
-      box-decoration-break: clone;
     }
 
     .doc-error-desc {
       font-weight: 600;
       color: #ffffff;
       font-size: 15px;
-      display: inline;
     }
     
     .doc-divider {
@@ -263,6 +259,7 @@
       margin: 12px 0;
       padding: 0;
       clear: both;
+      min-height: 120px; 
     }
 
     .snippet img {
@@ -277,26 +274,16 @@
       border: 1px solid rgba(255, 255, 255, 0.15);
       cursor: pointer;
       margin: 0; 
-      transition: transform 0.2s ease, border-color 0.2s ease;
+      transition: transform 0.2s ease, border-color 0.2s ease, opacity 0.3s ease;
+    }
+
+    .snippet img.lazy-image {
+      opacity: 0; 
     }
 
     .snippet img:hover { transform: scale(1.02); border-color: var(--accent); }
 
-    .img-fallback-msg { 
-      display: none; 
-      font-size: 12px; 
-      color: #ffc107; 
-      background: rgba(255, 193, 7, 0.1); 
-      border: 1px dashed rgba(255, 193, 7, 0.4); 
-      padding: 8px 12px; 
-      border-radius: 6px; 
-      margin-top: 4px;
-    }
-    .img-fallback-msg a:hover {
-      text-decoration: underline !important;
-      color: #fff !important;
-    }
-    
+    .img-fallback-msg { display: none; font-size: 12px; color: #ffc107; background: rgba(255, 193, 7, 0.1); border: 1px dashed rgba(255, 193, 7, 0.4); padding: 6px 10px; border-radius: 6px; }
     .img-container.img-failed img { display: none; }
     .img-container.img-failed .img-fallback-msg { display: block; }
 
@@ -312,13 +299,12 @@
       background: rgba(90, 167, 255, 0.35); 
       color: #fff; 
       font-weight: 700; 
-      padding: 2px 4px; 
+      padding: 1px 4px; 
       border-radius: 4px; 
       border: 1px solid rgba(90, 167, 255, 0.6); 
       box-shadow: 0 0 8px rgba(90, 167, 255, 0.2); 
-      display: inline; 
-      -webkit-box-decoration-break: clone;
-      box-decoration-break: clone;
+      display: inline-block; 
+      line-height: 1.1; 
     }
 
     .count { color: var(--muted); font-size: 13px; margin-top: 10px; }
@@ -449,12 +435,26 @@
       "DESEMPENHO", "DISPONIBILIDADE", "REINSTALAÇÃO / MSI", "TURING / INCIDENTE", "INFO", "OUTROS ATENDIMENTOS"
     ];
 
-    // ATUALIZAÇÃO 1: Palavras em inglês fundamentais para TI removidas da lista de "ignorados".
-    // Agora o sistema rastreará perfeitamente "not", "is", "be", etc.
     const STOP_WORDS = new Set([
       "de", "da", "do", "das", "dos", "ao", "aos", "em", "no", "na", "nos", "nas", 
-      "por", "para", "com", "um", "uma", "o", "a", "os", "as"
+      "por", "para", "com", "um", "uma", "o", "a", "os", "as", "se", "nao", "foi", 
+      "que", "ha", "este", "esta"
     ]);
+
+    // Instancia o IntersectionObserver global para as imagens
+    const imageObserver = new IntersectionObserver((entries, obs) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target.querySelector('img.lazy-image');
+          if (img && img.dataset.src) {
+            img.src = img.dataset.src; 
+            img.classList.remove('lazy-image');
+            img.removeAttribute('data-src');
+          }
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { rootMargin: '300px' }); // Inicia o download 300px antes da imagem aparecer na tela
 
     function cleanText(s) {
       if (!s) return '';
@@ -462,7 +462,7 @@
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
-        .replace(/[^a-z0-9]/g, ' ')
+        .replace(/[^a-z0-9_]/g, ' ') // Preserva o Underline (_) vital para logs (ex: HKEY_LOCAL_MACHINE)
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -486,7 +486,7 @@
         ...d,
         cleanTitle: cleanText(d.title),
         cleanTitleNoStopwords: titleKws.join(' '),
-        cleanText: cleanText(textWithoutUrls), // Usado para a nova janela matemática de densidade
+        cleanText: cleanText(textWithoutUrls),
         rawTextClean: cleanText(d.text),
         cleanPath: cleanText(d.path || d.title),
         titleKeywords: titleKws,
@@ -517,27 +517,24 @@
       if (!rawQuery) return 0;
       let score = 0;
 
-      const exactSearch = rawQuery.toLowerCase().trim();
+      const exactSearchCleaned = rawQuery.toLowerCase().replace(/^["']|["']$/g, '').trim();
+      const exactNoHyphen = exactSearchCleaned.replace(/-/g, ' ');
+
       const docTitleRaw = (d.title || "").toLowerCase();
       const docTextRaw = (d.text || "").toLowerCase();
-      const exactNoHyphen = exactSearch.replace(/-/g, ' ');
 
-      if (exactSearch.length >= 3) {
-          if (docTitleRaw === exactSearch || docTitleRaw === exactNoHyphen) score += 2000000000;
-          else if (docTitleRaw.includes(exactSearch) || docTitleRaw.includes(exactNoHyphen)) score += 100000000;
+      if (exactSearchCleaned.length >= 3) {
+          if (docTitleRaw === exactSearchCleaned || docTitleRaw === exactNoHyphen) score += 20000000000;
+          else if (docTitleRaw.includes(exactSearchCleaned) || docTitleRaw.includes(exactNoHyphen)) score += 10000000000;
+          if (docTextRaw.includes(exactSearchCleaned) || docTextRaw.includes(exactNoHyphen)) score += 5000000000;
       }
 
       const cleanQ = cleanText(rawQuery);
-      
-      // BÓNUS DE FRASE EXATA
-      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
-          score += 1000000000;
-      }
-
       const queryWords = getKeywords(rawQuery);
       if (queryWords.length === 0) return score; 
 
       const titleClean = d.cleanTitleNoStopwords;
+      const docTextKeywordsStr = d.textKeywords.join(' '); 
 
       let titleMatchedWords = 0;
       for (const word of queryWords) {
@@ -546,38 +543,27 @@
 
       const ratioTitle = titleMatchedWords / queryWords.length;
       if (ratioTitle >= 0.3) {
-        score += Math.pow(titleMatchedWords, 4) * 500000;
+        score += Math.pow(titleMatchedWords, 4) * 5000000;
       }
 
-      // ATUALIZAÇÃO 2: A MÁQUINA DE DENSIDADE (Janela de 150 caracteres)
-      // Resolve o problema de palavras separadas VS frase completa
-      let maxDensity = 0;
-      const windowChars = 150; 
-      
-      if (d.cleanText && queryWords.length > 0) {
-          for (let i = 0; i < d.cleanText.length; i += 40) { 
-              // Envolve a janela em espaços para forçar leitura de palavras inteiras
-              let textSlice = " " + d.cleanText.substring(i, i + windowChars) + " ";
-              let foundCount = 0;
-              
-              for (const qw of queryWords) {
-                  // Confirma se a palavra existe inteira e não como pedaço de outra palavra
-                  if (textSlice.includes(" " + qw + " ")) {
-                      foundCount++;
-                  } else if (qw.length >= 5 && textSlice.includes(qw)) {
-                      foundCount++;
-                  }
-              }
-              if (foundCount > maxDensity) {
-                  maxDensity = foundCount;
+      let longestSeq = 0;
+      const searchWords = queryWords.slice(0, 25); 
+      for(let len = searchWords.length; len >= 2; len--) {
+          for(let i = 0; i <= searchWords.length - len; i++) {
+              const phrase = searchWords.slice(i, i+len).join(' ');
+              if (docTextKeywordsStr.includes(phrase)) {
+                  if (len > longestSeq) longestSeq = len;
               }
           }
+          if (longestSeq > 0) break; 
       }
+      
+      if (longestSeq >= 5) score += Math.pow(longestSeq, 10) * 100000;
+      else if (longestSeq >= 3) score += Math.pow(longestSeq, 8) * 1000;
+      else if (longestSeq === 2) score += 500;
 
-      if (maxDensity >= 2) {
-          // Exponencial extremo: 5 palavras juntas = 5^8 = ~39 Bilhões de pontos
-          // Literalmente esmaga documentos com dezenas de "palavras soltas"
-          score += Math.pow(maxDensity, 8) * 100000; 
+      if (cleanQ.length > 5 && d.cleanText.includes(cleanQ)) {
+        score += 10000;
       }
 
       return score;
@@ -590,7 +576,7 @@
       };
       const escaped = escapeRegExp(term.toLowerCase());
       const pattern = escaped.split('').map(c => charMap[c] || c).join('');
-      return new RegExp(pattern.replace(/ /g, '[ \\t\\-]+'), 'gi');
+      return new RegExp('(^|[^a-zA-Z0-9\\u00C0-\\u00FF_])(' + pattern.replace(/ /g, '[\\s\\-]+') + ')(?=[^a-zA-Z0-9\\u00C0-\\u00FF_]|$)', 'gi');
     }
 
     function formatSnippetText(snippetHtml) {
@@ -604,26 +590,12 @@
       const urlRegex = /(?<!href=")(?<!src=")(https?:\/\/[^\s<)]+)/g;
       formatted = formatted.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener">$1</a>');
 
-      formatted = formatted.replace(/(^|\n)([ \t]*)(ERRO:)([^\r\n]*)/gi, '$1<div class="doc-divider"></div>$2<span class="doc-error-badge">$3</span><span class="doc-error-desc">$4</span>');
+      formatted = formatted.replace(/(^|\n)([ \t]*)(ERRO:)([^\n]+)/gi, '$1<div class="doc-divider"></div>$2<span class="doc-error-badge">$3</span><span class="doc-error-desc">$4</span>');
 
-      // ATUALIZAÇÃO 3: URL Local Segura.
-      // Se abrir localmente (file://) ele forçará o apontamento relativo de segurança para `./assets/`
+      // IMPLEMENTAÇÃO DEFINITIVA DO LAZY LOADING: Imagens agora nascem com 1x1 base64 e usam data-src
       formatted = formatted.replace(
-        /\s*!\[([^\]]*)\]\(([^)]+)\)\s*/g,
-        (match, alt, url) => {
-          let cleanUrl = url.trim().replace(/\\/g, '/');
-          
-          if (!cleanUrl.startsWith('http')) {
-              if (cleanUrl.startsWith('/')) cleanUrl = cleanUrl.substring(1);
-              if (cleanUrl.startsWith('./')) cleanUrl = cleanUrl.substring(2);
-              cleanUrl = './' + cleanUrl; 
-          }
-          
-          let filename = cleanUrl.split('/').pop() || 'imagem';
-          if (filename.length > 35) filename = filename.substring(0, 35) + '...';
-          
-          return `\n<div class="img-container"><img src="${cleanUrl}" alt="${alt || 'Imagem da Documentação'}" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem('${cleanUrl}')" title="Clique para ampliar" /><div class="img-fallback-msg"><a href="${cleanUrl}" target="_blank" rel="noopener" style="color: inherit; text-decoration: none;" title="O seu ficheiro index.html físico não encontrou esta imagem na pasta assets. Garanta que fez git pull.">⚠️ Ficheiro indisponível fisicamente (${filename})</a></div></div>\n`;
-        }
+        /\s*!\[Imagem\]\(([^)]+)\)\s*/g,
+        `\n<div class="img-container"><img data-src="$1" src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=" alt="Imagem da Documentação" class="lazy-image" onerror="this.onerror=null; this.parentElement.classList.add('img-failed');" onclick="ampliarImagem(this.getAttribute('data-src') || this.src)" title="Clique para ampliar" /><div class="img-fallback-msg">⚠️ Imagem pendente de carregamento no servidor</div></div>\n`
       );
 
       return formatted;
@@ -632,42 +604,16 @@
     function highlightSnippetHtml(htmlContent, rawQuery) {
       if (!htmlContent || !rawQuery) return htmlContent;
 
-      const cleanQ = cleanText(rawQuery);
-      const queryWords = cleanQ.split(/\s+/).filter(w => w.length >= 2 && !STOP_WORDS.has(w));
+      const queryWords = getKeywords(rawQuery);
+      const uniqueWords = [...new Set(queryWords)].sort((a, b) => b.length - a.length);
       
-      let highlightList = [];
-      const rawTrimmed = rawQuery.trim();
-      
-      if (rawTrimmed.length >= 3) {
-        highlightList.push({ word: rawTrimmed, primary: true });
-      }
-      if (cleanQ.length >= 3 && cleanQ !== rawTrimmed) {
-        highlightList.push({ word: cleanQ, primary: true });
-      }
-      queryWords.forEach(w => {
-        if (w.length >= 2) highlightList.push({ word: w, primary: false });
-      });
-
-      highlightList = highlightList.filter((v, i, a) => a.findIndex(t => (t.word === v.word)) === i);
-      highlightList.sort((a, b) => b.word.length - a.word.length);
-
       let highlighted = htmlContent;
-      for (const item of highlightList) {
+      for (const word of uniqueWords) {
         try {
-          const charMap = {
-            'a': '[aáàâãä]', 'e': '[eéèêë]', 'i': '[iíìîï]',
-            'o': '[oóòôõö]', 'u': '[uúùûü]', 'c': '[cç]'
-          };
-          const escaped = escapeRegExp(item.word.toLowerCase());
-          const pattern = escaped.split('').map(c => charMap[c] || c).join('');
-          
-          // Impede realce dentro de palavras maiores ou links (Word Boundary Rigoroso)
-          const regHighlight = new RegExp(`(^|[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ])(${pattern.replace(/ /g, '[ \\t\\-]+')})(?=[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ]|$)`, 'gi');
-          
-          const openTag = item.primary ? '<mark class="primary-match">' : '<mark>';
+          const regHighlight = buildAccentRegex(word);
           highlighted = highlighted.replace(/(<[^>]+>)|([^<]+)/g, (match, tag, text) => {
             if (tag) return tag;
-            return text.replace(regHighlight, `$1${openTag}$2</mark>`);
+            return text.replace(regHighlight, `$1<mark>$2</mark>`);
           });
         } catch (e) {}
       }
@@ -752,7 +698,7 @@
       const cleanSearchQuery = queryWords.join(' ');
 
       let fuseMatches = [];
-      if (directMatches.length === 0 || directMatches[0]._score < 100000) {
+      if (directMatches.length === 0 || directMatches[0]._score < 1000) {
         fuseMatches = fuse.search(cleanSearchQuery || rawQuery)
           .map(r => r.item)
           .filter(d => !directMatches.some(dm => dm.id === d.id));
@@ -774,17 +720,38 @@
 
       count.textContent = `${results.length} resultado(s) encontrado(s)`;
 
+      // Vincula o observador às imagens geradas na nova busca
+      document.querySelectorAll('.img-container').forEach(container => {
+        imageObserver.observe(container);
+      });
+
+      // SCROLL INTELIGENTE DE MAIOR DENSIDADE
       setTimeout(() => {
         const snippets = document.querySelectorAll('.snippet');
+        const sortedQueryWords = getKeywords(rawQuery).sort((a, b) => b.length - a.length);
+        
         snippets.forEach(box => {
-          const mark = box.querySelector('mark.primary-match') || box.querySelector('mark');
-          if (mark) {
+          const marks = Array.from(box.querySelectorAll('mark'));
+          if (marks.length === 0) return;
+
+          let targetMark = null;
+          // Procura pelo destaque com a palavra mais específica/longa da busca do usuário
+          for (const qw of sortedQueryWords) {
+            if (qw.length < 4) continue;
+            targetMark = marks.find(m => cleanText(m.textContent) === cleanText(qw));
+            if (targetMark) break;
+          }
+          
+          if (!targetMark) targetMark = marks[0];
+
+          if (targetMark) {
             const boxRect = box.getBoundingClientRect();
-            const markRect = mark.getBoundingClientRect();
-            box.scrollTop += (markRect.top - boxRect.top) - 60; 
+            const markRect = targetMark.getBoundingClientRect();
+            // Mantém a rolagem local na caixa, sem mexer a tela inteira, ignorando pulos de layout
+            box.scrollTop += (markRect.top - boxRect.top) - 80; 
           }
         });
-      }, 350); 
+      }, 200); 
     }
 
     async function processarImagemOCR(imageSource) {
@@ -800,7 +767,7 @@
 
         let cleanTextStr = rawText
           .replace(/[\r\n]+/g, ' ')
-          .replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s]/g, ' ')
+          .replace(/[^a-zA-Z0-9áàâãéèêíïóôõöúçÑñÁÀÂÃÉÈÍÏÓÔÕÖÚ\s_]/g, ' ')
           .replace(/\s+/g, ' ')
           .trim();
 
